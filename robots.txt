@@ -1,0 +1,44 @@
+# robots.txt for QueryJSON
+# https://queryjson.com
+
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /static/css/
+Allow: /static/js/
+Allow: /static/images/
+Allow: /docs/
+
+# Disallow specific files
+Disallow: /static/js/app.js.map
+Disallow: /.git/
+Disallow: /node_modules/
+Disallow: /.env
+
+# Sitemap location
+Sitemap: https://queryjson.com/sitemap.xml
+
+# Crawl-delay (optional - adjust if needed)
+Crawl-delay: 1
+
+# Popular search engine specific rules
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /static/images/
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: YandexBot
+Allow: /

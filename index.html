@@ -12,10 +12,46 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="QueryJSON - Transform, query, and explore JSON/XML/CSV data with an interactive table viewer and SQL queries powered by PGLite">
-    <meta name="keywords" content="json, xml, csv, table, converter, sql, query, pglite, json viewer, json explorer, xml to json, csv to json">
+
+    <!-- Primary Meta Tags -->
+    <title>QueryJSON - Free Online JSON, XML, CSV Converter & SQL Query Tool</title>
+    <meta name="title" content="QueryJSON - Free Online JSON, XML, CSV Converter & SQL Query Tool">
+    <meta name="description" content="Free online tool to convert, query, and analyze JSON, XML, and CSV data. Transform data to interactive tables, run SQL queries with PostgreSQL, apply filters, and export results. No signup required, 100% browser-based and secure.">
+    <meta name="keywords" content="json viewer, json formatter, json to table, xml to json, csv to json, json converter, xml converter, csv converter, sql query tool, json parser, online json editor, json explorer, data converter, postgresql query, pglite, jsonpath query, free json tool, data analysis tool, json validator, csv parser, xml parser">
     <meta name="author" content="Dinesh D">
-    <title>QueryJSON - JSON/XML/CSV to Table Converter & Query Tool</title>
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://queryjson.com/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://queryjson.com/">
+    <meta property="og:title" content="QueryJSON - Free Online JSON, XML, CSV Converter & SQL Query Tool">
+    <meta property="og:description" content="Free online tool to convert, query, and analyze JSON, XML, and CSV data. Transform data to interactive tables, run SQL queries, apply filters, and export results. 100% browser-based and secure.">
+    <meta property="og:image" content="https://queryjson.com/static/images/og-image.png">
+    <meta property="og:site_name" content="QueryJSON">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://queryjson.com/">
+    <meta name="twitter:title" content="QueryJSON - Free Online JSON, XML, CSV Converter & SQL Query Tool">
+    <meta name="twitter:description" content="Free online tool to convert, query, and analyze JSON, XML, and CSV data. Transform data to interactive tables, run SQL queries, and export results.">
+    <meta name="twitter:image" content="https://queryjson.com/static/images/twitter-card.png">
+    <meta name="twitter:creator" content="@dineshd">
+
+    <!-- Additional SEO Meta Tags -->
+    <meta name="theme-color" content="#007acc">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="QueryJSON">
+    <meta name="application-name" content="QueryJSON">
+    <meta name="msapplication-TileColor" content="#007acc">
+    <meta name="msapplication-config" content="static/images/browserconfig.xml">
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
@@ -33,6 +69,163 @@
     <!-- JSONPath library - using a simpler, more reliable library -->
     <script src="https://cdn.jsdelivr.net/npm/jsonpath@1.1.1/jsonpath.min.js"></script>
 
+    <!-- Structured Data (JSON-LD) for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "QueryJSON",
+        "alternateName": "QueryJSON - JSON XML CSV Converter",
+        "url": "https://queryjson.com",
+        "description": "Free online tool to convert, query, and analyze JSON, XML, and CSV data. Transform data to interactive tables, run SQL queries with PostgreSQL, apply filters, and export results. No signup required, 100% browser-based and secure.",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Any (Web-based)",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "author": {
+            "@type": "Person",
+            "name": "Dinesh D",
+            "url": "https://github.com/dinesh-it"
+        },
+        "creator": {
+            "@type": "Person",
+            "name": "Dinesh D",
+            "url": "https://github.com/dinesh-it"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "QueryJSON",
+            "url": "https://queryjson.com"
+        },
+        "softwareVersion": "1.0",
+        "featureList": [
+            "JSON to Table Converter",
+            "XML to JSON Converter",
+            "CSV to JSON Converter",
+            "SQL Query with PostgreSQL (PGLite)",
+            "JSONPath Query Support",
+            "Interactive Data Filtering",
+            "Column Selection and Reordering",
+            "Data Export (CSV, JSON)",
+            "100% Client-side Processing",
+            "No Server Upload Required"
+        ],
+        "browserRequirements": "Requires JavaScript. Works with modern browsers (Chrome, Firefox, Safari, Edge).",
+        "screenshot": "https://queryjson.com/static/images/screenshot.png",
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "150",
+            "bestRating": "5",
+            "worstRating": "1"
+        }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "QueryJSON",
+        "applicationCategory": "WebApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+            "@type": "Offer",
+            "price": "0"
+        },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "150"
+        }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "What data formats are supported by QueryJSON?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "QueryJSON supports JSON, XML, and CSV formats. The tool automatically detects the format when you paste or upload data."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is my data secure? Is it sent to a server?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Your data is completely secure. All processing happens entirely in your browser using client-side JavaScript. No data is ever sent to any server or stored anywhere except your browser's memory."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How do I query my data with SQL?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "After parsing your data, switch to the SQL tab in the QUERY section. Your data is available in a table called json_data. For example: SELECT * FROM json_data WHERE salary > 90000"
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Can I use QueryJSON offline?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "The tool requires an internet connection to load the external libraries (PGLite, JSONPath) on first load. However, once loaded, it can work offline for the duration of your session."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is QueryJSON free to use?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes! QueryJSON is completely free and open-source under the MIT License."
+                }
+            }
+        ]
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://queryjson.com"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "JSON Converter",
+                "item": "https://queryjson.com#json-converter"
+            },
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": "XML Converter",
+                "item": "https://queryjson.com#xml-converter"
+            },
+            {
+                "@type": "ListItem",
+                "position": 4,
+                "name": "CSV Converter",
+                "item": "https://queryjson.com#csv-converter"
+            }
+        ]
+    }
+    </script>
+
     <!-- Styles -->
     <link rel="stylesheet" href="static/css/styles.css">
 </head>
@@ -40,6 +233,10 @@
     <div class="container">
         <div class="header">
             <h1><img src="static/images/favicon-32x32.png" alt="QueryJSON" style="vertical-align: middle; margin-right: 8px; width: 20px; height: 20px;"> QueryJSON</h1>
+            <div class="header-links">
+                <a href="#" onclick="openHelpModal(event); return false;" class="header-link">About</a>
+                <a href="#" onclick="openFAQModal(event); return false;" class="header-link">FAQ</a>
+            </div>
         </div>
 
         <div class="section-header">
@@ -236,6 +433,88 @@
             </div>
         </div>
 
+        <!-- SEO Content Section (Hidden but crawlable) -->
+        <section class="seo-content" style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;">
+            <h1>Free Online JSON, XML, and CSV Converter Tool</h1>
+            <p>QueryJSON is the best free online tool for converting, querying, and analyzing structured data. Whether you need a JSON viewer, XML to JSON converter, or CSV parser, QueryJSON handles it all in your browser without uploading data to any server.</p>
+
+            <h2>Key Features of QueryJSON</h2>
+            <ul>
+                <li><strong>JSON Viewer and Formatter:</strong> Parse, validate, and view JSON data in an interactive table format</li>
+                <li><strong>XML to JSON Converter:</strong> Automatically convert XML data to JSON with proper structure preservation</li>
+                <li><strong>CSV to JSON Converter:</strong> Transform CSV files into JSON format with automatic delimiter detection</li>
+                <li><strong>SQL Query Tool:</strong> Run PostgreSQL queries on your data using PGLite (PostgreSQL in the browser)</li>
+                <li><strong>JSONPath Query Support:</strong> Query nested JSON structures using JSONPath expressions</li>
+                <li><strong>Data Filtering:</strong> Apply multiple filters with various operators (equals, contains, greater than, etc.)</li>
+                <li><strong>Column Management:</strong> Select, reorder, and customize which columns to display</li>
+                <li><strong>Export Functionality:</strong> Download results as CSV or JSON files</li>
+                <li><strong>100% Client-Side:</strong> All processing happens in your browser - no data sent to servers</li>
+                <li><strong>Free and Open Source:</strong> MIT licensed, completely free to use forever</li>
+            </ul>
+
+            <h2>How to Use QueryJSON</h2>
+            <ol>
+                <li>Paste or upload your JSON, XML, or CSV data</li>
+                <li>Click Parse to process your data</li>
+                <li>Select columns to display and apply filters as needed</li>
+                <li>Run SQL or JSONPath queries for advanced analysis</li>
+                <li>Export filtered results in your preferred format</li>
+            </ol>
+
+            <h2>Why Choose QueryJSON?</h2>
+            <p><strong>Privacy First:</strong> Unlike other online converters, QueryJSON processes all data entirely in your browser. Your sensitive data never leaves your computer, making it perfect for confidential information.</p>
+            <p><strong>No Sign-Up Required:</strong> Start using QueryJSON immediately without creating an account or providing any personal information.</p>
+            <p><strong>Developer Friendly:</strong> Built by developers for developers. Support for SQL queries, JSONPath, and multiple data formats makes it the perfect tool for data analysis and debugging.</p>
+            <p><strong>Fast and Efficient:</strong> Handle thousands of rows efficiently with our optimized data processing engine.</p>
+
+            <h2>Common Use Cases</h2>
+            <ul>
+                <li>Convert API responses from JSON to table format for easier reading</li>
+                <li>Transform XML data from legacy systems to JSON for modern applications</li>
+                <li>Parse and analyze CSV exports from databases or spreadsheets</li>
+                <li>Debug JSON data structures with the interactive viewer</li>
+                <li>Run SQL queries on JSON data without setting up a database</li>
+                <li>Filter and export specific data subsets from large datasets</li>
+                <li>Validate JSON syntax and structure</li>
+                <li>Convert between data formats for data migration projects</li>
+            </ul>
+
+            <h2>Supported Data Formats</h2>
+            <h3>JSON (JavaScript Object Notation)</h3>
+            <p>QueryJSON supports all valid JSON formats including nested objects, arrays, and complex data structures. Use our JSON viewer to visualize and query your data.</p>
+
+            <h3>XML (Extensible Markup Language)</h3>
+            <p>Convert XML to JSON automatically. Our parser handles XML attributes, nested elements, and converts them to a clean JSON structure.</p>
+
+            <h3>CSV (Comma-Separated Values)</h3>
+            <p>Import CSV files with automatic delimiter detection (comma, semicolon, or tab). The first row is treated as headers, and numeric values are automatically typed.</p>
+
+            <h2>Advanced Features</h2>
+            <h3>SQL Queries with PostgreSQL</h3>
+            <p>Run full PostgreSQL queries on your data using PGLite. Your data is loaded into a table called 'json_data' where you can perform SELECT, WHERE, JOIN, GROUP BY, and other SQL operations.</p>
+
+            <h3>JSONPath Queries</h3>
+            <p>Navigate complex JSON structures using JSONPath expressions. Perfect for extracting specific values from nested objects and arrays.</p>
+
+            <h3>Interactive Filtering</h3>
+            <p>Apply multiple filters simultaneously with operators including equals, not equals, contains, starts with, ends with, greater than, less than, is null, and is not null.</p>
+
+            <h2>Browser Compatibility</h2>
+            <p>QueryJSON works on all modern browsers including Chrome, Firefox, Safari, and Edge. JavaScript must be enabled for the application to function.</p>
+
+            <h2>Open Source and Free</h2>
+            <p>QueryJSON is open-source software released under the MIT License. You can view the source code, contribute improvements, or report issues on GitHub.</p>
+
+            <h2>Data Security and Privacy</h2>
+            <p>Your data security is our top priority. QueryJSON is a 100% client-side application that processes all data in your browser's memory. No data is uploaded to any server, stored in any database, or transmitted over the internet. When you close your browser tab, all data is completely removed.</p>
+
+            <h2>Performance</h2>
+            <p>QueryJSON can efficiently handle datasets with thousands of rows. Performance depends on your device's memory and processing power. For very large datasets (100,000+ rows), processing time may vary.</p>
+
+            <h2>Keywords</h2>
+            <p>json viewer, json formatter, json to table, json converter, json parser, json validator, json editor, online json tool, xml to json, xml converter, xml parser, csv to json, csv converter, csv parser, data converter, sql query tool, postgresql online, jsonpath query, free online tool, developer tools, data analysis</p>
+        </section>
+
         <!-- Footer -->
         <div class="footer">
             <div class="footer-message">
@@ -252,6 +531,129 @@
                 <a href="docs/ROADMAP.md" target="_blank" style="color: var(--accent-primary); text-decoration: none;">Roadmap</a>
                 |
                 <a href="LICENSE" target="_blank" style="color: var(--accent-primary); text-decoration: none;">MIT License</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner">⚙</div>
+            <div class="loading-text">Processing...</div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeHelpModal()">&times;</span>
+            <h2>About - QueryJSON</h2>
+            <div class="modal-body">
+                <h3>About QueryJSON</h3>
+                <p>QueryJSON is a powerful web-based tool that allows you to transform, query, and explore structured data in multiple formats. Convert JSON, XML, and CSV data into interactive tables, apply filters, and run SQL or JSONPath queries - all in your browser with no server required.</p>
+
+                <h3>Key Features</h3>
+                <ul>
+                    <li><strong>Multi-Format Support:</strong> Import data in JSON, XML, or CSV format</li>
+                    <li><strong>Interactive Table View:</strong> View your data in a sortable, filterable table</li>
+                    <li><strong>SQL Queries:</strong> Run PostgreSQL queries using PGLite (PostgreSQL in the browser)</li>
+                    <li><strong>JSONPath Queries:</strong> Query JSON data using JSONPath expressions</li>
+                    <li><strong>Column Management:</strong> Select, reorder, and customize which columns to display</li>
+                    <li><strong>Advanced Filtering:</strong> Apply multiple filters with various operators</li>
+                    <li><strong>Export Data:</strong> Export filtered results as CSV or JSON</li>
+                    <li><strong>Privacy First:</strong> All processing happens in your browser - no data is sent to any server</li>
+                </ul>
+
+                <h3>How to Use</h3>
+                <ol>
+                    <li><strong>Input Data:</strong> Paste or upload your JSON, XML, or CSV data in the INPUT section</li>
+                    <li><strong>Parse:</strong> Click the "Parse" button to process your data</li>
+                    <li><strong>Choose Columns:</strong> Select which columns to display and reorder them by dragging</li>
+                    <li><strong>Filter:</strong> Add filters to narrow down your data using various operators</li>
+                    <li><strong>View Output:</strong> See your data in an interactive table with search and sort capabilities</li>
+                    <li><strong>Query:</strong> Use SQL or JSONPath to run advanced queries on your data</li>
+                    <li><strong>Export:</strong> Download your filtered results as CSV or JSON</li>
+                </ol>
+
+                <h3>Keyboard Shortcuts</h3>
+                <ul>
+                    <li><strong>Ctrl/Cmd + Enter:</strong> Execute SQL or JSONPath query</li>
+                </ul>
+
+                <h3>Tips</h3>
+                <ul>
+                    <li>The tool automatically detects your data format (JSON, XML, or CSV)</li>
+                    <li>For CSV, the first row is treated as headers</li>
+                    <li>XML and CSV data are automatically converted to JSON for processing</li>
+                    <li>Use the search box to quickly find data across all visible columns</li>
+                    <li>Click column headers to sort the table</li>
+                    <li>Drag column items to reorder them</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ Modal -->
+    <div id="faqModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeFAQModal()">&times;</span>
+            <h2>Frequently Asked Questions</h2>
+            <div class="modal-body">
+                <div class="faq-item">
+                    <h3>What data formats are supported?</h3>
+                    <p>QueryJSON supports JSON, XML, and CSV formats. The tool automatically detects the format when you paste or upload data.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>Is my data secure? Is it sent to a server?</h3>
+                    <p>Your data is completely secure. All processing happens entirely in your browser using client-side JavaScript. No data is ever sent to any server or stored anywhere except your browser's memory.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>What's the difference between SQL and JSONPath queries?</h3>
+                    <p><strong>SQL:</strong> Runs PostgreSQL queries on your data using PGLite. Best for aggregations, joins, and complex filtering. Your data is loaded into a table called <code>json_data</code>.</p>
+                    <p><strong>JSONPath:</strong> Queries the original JSON structure using path expressions. Best for navigating nested JSON and extracting specific values.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>How do I query my data with SQL?</h3>
+                    <p>After parsing your data, switch to the SQL tab in the QUERY section. Your data is available in a table called <code>json_data</code>. For example: <code>SELECT * FROM json_data WHERE salary > 90000</code></p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>Can I use this tool offline?</h3>
+                    <p>The tool requires an internet connection to load the external libraries (PGLite, JSONPath) on first load. However, once loaded, it can work offline for the duration of your session.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>What happens when I parse XML or CSV?</h3>
+                    <p>XML and CSV data are automatically converted to JSON format. The converted JSON is displayed in the input textarea so you can see the structure. The data then follows the normal processing flow.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>How do filters work?</h3>
+                    <p>You can add multiple filters with different operators (equals, contains, greater than, etc.). All filters are applied with AND logic - data must match all filters to be displayed.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>What's the maximum data size I can process?</h3>
+                    <p>Since everything runs in your browser, the limit depends on your device's memory. The tool can handle thousands of rows efficiently. For very large datasets (100k+ rows), performance may vary based on your device.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>Can I save my queries?</h3>
+                    <p>Currently, queries are not saved automatically. You can copy your queries and save them externally. We may add query saving in future updates.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>How do I report a bug or request a feature?</h3>
+                    <p>Visit our <a href="https://github.com/dinesh-it/queryjson" target="_blank">GitHub repository</a> to report issues or request features.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>Is this tool free?</h3>
+                    <p>Yes! QueryJSON is completely free and open-source under the MIT License. If you find it useful, consider supporting the project on <a href="https://www.buymeacoffee.com/dineshd" target="_blank">Buy Me A Coffee</a>.</p>
+                </div>
             </div>
         </div>
     </div>

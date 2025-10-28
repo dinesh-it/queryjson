@@ -1002,3 +1002,251 @@ tbody tr:hover {
         width: 100px !important;
     }
 }
+
+/* Header Links */
+.header-links {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.header-link {
+    color: var(--accent-primary);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.header-link:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.7);
+    animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background-color: var(--bg-secondary);
+    margin: 2% auto;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: slideDown 0.3s ease-out;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-content h2 {
+    color: var(--accent-primary);
+    font-size: 20px;
+    margin: 0;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-tertiary);
+}
+
+.modal-close {
+    color: var(--text-secondary);
+    position: absolute;
+    right: 20px;
+    top: 12px;
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+    line-height: 1;
+}
+
+.modal-close:hover,
+.modal-close:focus {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-body h3 {
+    color: var(--success);
+    font-size: 16px;
+    margin-top: 20px;
+    margin-bottom: 12px;
+}
+
+.modal-body h3:first-child {
+    margin-top: 0;
+}
+
+.modal-body p {
+    line-height: 1.6;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.modal-body ul,
+.modal-body ol {
+    margin-left: 20px;
+    margin-bottom: 16px;
+    line-height: 1.8;
+}
+
+.modal-body li {
+    margin-bottom: 8px;
+}
+
+.modal-body strong {
+    color: var(--warning);
+}
+
+.modal-body code {
+    background-color: var(--bg-tertiary);
+    color: var(--success);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+}
+
+.modal-body a {
+    color: var(--accent-primary);
+    text-decoration: none;
+}
+
+.modal-body a:hover {
+    text-decoration: underline;
+}
+
+.faq-item {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.faq-item:last-child {
+    border-bottom: none;
+}
+
+.faq-item h3 {
+    color: var(--accent-primary);
+    font-size: 15px;
+    margin-bottom: 8px;
+}
+
+/* Mobile responsiveness for modals */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+        max-height: 85vh;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .modal-content h2 {
+        font-size: 18px;
+        padding: 12px 16px;
+    }
+
+    .header-links {
+        gap: 12px;
+    }
+
+    .header-link {
+        font-size: 12px;
+        padding: 3px 6px;
+    }
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(3px);
+}
+
+.loading-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.loading-spinner {
+    font-size: 64px;
+    color: var(--accent-primary);
+    animation: rotate 2s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-text {
+    font-size: 18px;
+    color: var(--text-primary);
+    font-weight: 500;
+    letter-spacing: 1px;
+}
+
+/* Mobile responsiveness for loading overlay */
+@media (max-width: 768px) {
+    .loading-spinner {
+        font-size: 48px;
+    }
+
+    .loading-text {
+        font-size: 16px;
+    }
+}

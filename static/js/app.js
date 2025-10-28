@@ -132,47 +132,56 @@ function showStatus(message, type = 'success') {
 }
 
 function parseJSON() {
-    try {
-        const input = document.getElementById('jsonInput').value.trim();
+    // Show loading overlay
+    showLoader();
 
-        if (!input) {
-            showStatus('Please paste or upload JSON/XML/CSV data', 'error');
-            return;
+    // Use setTimeout to allow the loader to render before blocking processing
+    setTimeout(() => {
+        try {
+            const input = document.getElementById('jsonInput').value.trim();
+
+            if (!input) {
+                hideLoader();
+                showStatus('Please paste or upload JSON/XML/CSV data', 'error');
+                return;
+            }
+
+            // Check if input is XML
+            if (input.startsWith('<?xml') || input.startsWith('<')) {
+                parseXML(input);
+                return;
+            }
+
+            // Check if input is CSV (contains commas and doesn't start with { or [)
+            if (!input.startsWith('{') && !input.startsWith('[') && (input.includes(',') || input.includes('\t'))) {
+                parseCSV(input);
+                return;
+            }
+
+            jsonData = JSON.parse(input);
+
+            // Normalize data to array of objects
+            normalizeData();
+
+            // Detect structure
+            detectStructure();
+
+            // Build column list
+            buildColumns();
+
+            // Build table
+            buildTable();
+
+            // Initialize PGLite
+            initializePGLite();
+
+            hideLoader();
+            showStatus('JSON parsed successfully! ' + parsedData.length + ' records found.', 'success');
+        } catch (error) {
+            hideLoader();
+            showStatus('Invalid JSON: ' + error.message, 'error');
         }
-
-        // Check if input is XML
-        if (input.startsWith('<?xml') || input.startsWith('<')) {
-            parseXML(input);
-            return;
-        }
-
-        // Check if input is CSV (contains commas and doesn't start with { or [)
-        if (!input.startsWith('{') && !input.startsWith('[') && (input.includes(',') || input.includes('\t'))) {
-            parseCSV(input);
-            return;
-        }
-
-        jsonData = JSON.parse(input);
-
-        // Normalize data to array of objects
-        normalizeData();
-
-        // Detect structure
-        detectStructure();
-
-        // Build column list
-        buildColumns();
-
-        // Build table
-        buildTable();
-
-        // Initialize PGLite
-        initializePGLite();
-
-        showStatus('JSON parsed successfully! ' + parsedData.length + ' records found.', 'success');
-    } catch (error) {
-        showStatus('Invalid JSON: ' + error.message, 'error');
-    }
+    }, 50);
 }
 
 function parseXML(xmlString) {
@@ -184,6 +193,7 @@ function parseXML(xmlString) {
         // Check for parsing errors
         const parserError = xmlDoc.getElementsByTagName('parsererror');
         if (parserError.length > 0) {
+            hideLoader();
             throw new Error('XML parsing error: ' + parserError[0].textContent);
         }
 
@@ -208,8 +218,10 @@ function parseXML(xmlString) {
         // Initialize PGLite
         initializePGLite();
 
+        hideLoader();
         showStatus('XML converted and parsed successfully! ' + parsedData.length + ' records found.', 'success');
     } catch (error) {
+        hideLoader();
         showStatus('Invalid XML: ' + error.message, 'error');
     }
 }
@@ -272,6 +284,7 @@ function parseCSV(csvString) {
         const rows = csvString.split('\n').filter(row => row.trim());
 
         if (rows.length === 0) {
+            hideLoader();
             throw new Error('CSV data is empty');
         }
 
@@ -330,8 +343,10 @@ function parseCSV(csvString) {
         // Initialize PGLite
         initializePGLite();
 
+        hideLoader();
         showStatus('CSV converted and parsed successfully! ' + parsedData.length + ' records found.', 'success');
     } catch (error) {
+        hideLoader();
         showStatus('Invalid CSV: ' + error.message, 'error');
     }
 }
@@ -1245,3 +1260,61 @@ function clearInput() {
     document.getElementById('statFiltered').textContent = '0';
     document.getElementById('statsContainer').style.display = 'none';
 }
+
+// Loading Overlay Functions
+function showLoader() {
+    document.getElementById('loadingOverlay').style.display = 'block';
+}
+
+function hideLoader() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+// Modal Functions
+function openHelpModal(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    document.getElementById('helpModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeHelpModal() {
+    document.getElementById('helpModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function openFAQModal(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    document.getElementById('faqModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeFAQModal() {
+    document.getElementById('faqModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal when clicking outside of it
+window.addEventListener('click', function(event) {
+    const helpModal = document.getElementById('helpModal');
+    const faqModal = document.getElementById('faqModal');
+
+    if (event.target === helpModal) {
+        closeHelpModal();
+    } else if (event.target === faqModal) {
+        closeFAQModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeHelpModal();
+        closeFAQModal();
+    }
+});

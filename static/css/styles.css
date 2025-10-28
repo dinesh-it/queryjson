@@ -801,7 +801,7 @@ tbody tr:hover {
 @media (max-width: 768px) {
     .main-grid {
         grid-template-columns: 1fr;
-        max-height: 60vh;
+        max-height: 45vh;
     }
 
     .filter-row {
@@ -829,9 +829,41 @@ tbody tr:hover {
         gap: 4px;
     }
 
-    .header img {
-        height: 32px !important;
-        width: 120px !important;
+    /* Logo in header */
+    h1 img {
+        width: 18px !important;
+        height: 18px !important;
+        margin-right: 6px !important;
+    }
+
+    /* Output section height control */
+    #outputPanel:not(.collapsed) {
+        max-height: 35vh;
+        min-height: 120px;
+    }
+
+    #outputPanel:not(.collapsed) .panel-content {
+        max-height: 35vh;
+    }
+
+    /* Query section visibility and height control */
+    #queryPanel:not(.collapsed) {
+        max-height: 30vh;
+        min-height: 100px;
+    }
+
+    #queryPanel:not(.collapsed) .panel-content {
+        max-height: 30vh;
+        overflow-y: auto;
+    }
+
+    /* Ensure collapsed state works on mobile */
+    #outputPanel.collapsed,
+    #queryPanel.collapsed {
+        max-height: 0 !important;
+        min-height: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
     }
 
     .footer {
@@ -852,7 +884,7 @@ tbody tr:hover {
 @media (max-width: 480px) {
     .main-grid {
         grid-template-columns: 1fr;
-        max-height: 50vh;
+        max-height: 40vh;
     }
 
     .header {
@@ -869,9 +901,47 @@ tbody tr:hover {
         height: 28px;
     }
 
-    .header img {
-        height: 28px !important;
-        width: 100px !important;
+    /* Logo in header */
+    h1 img {
+        width: 16px !important;
+        height: 16px !important;
+        margin-right: 6px !important;
+    }
+
+    /* Output section height control */
+    #outputPanel:not(.collapsed) {
+        max-height: 30vh;
+        min-height: 100px;
+    }
+
+    #outputPanel:not(.collapsed) .panel-content {
+        max-height: 30vh;
+    }
+
+    /* Query section visibility and height control */
+    #queryPanel:not(.collapsed) {
+        max-height: 25vh;
+        min-height: 80px;
+        overflow: visible;
+    }
+
+    #queryPanel:not(.collapsed) .panel-content {
+        max-height: 25vh;
+        overflow-y: auto;
+    }
+
+    /* Ensure collapsed state works on mobile */
+    #outputPanel.collapsed,
+    #queryPanel.collapsed {
+        max-height: 0 !important;
+        min-height: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+
+    .query-result {
+        max-height: 150px;
+        overflow-y: auto;
     }
 
     table {

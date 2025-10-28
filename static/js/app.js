@@ -270,7 +270,7 @@ function csvToRows(csvRows) {
     // Clean up and rename columns
     result.forEach(row => {
         // Rename path_0, path_1 to more meaningful names
-        const pathNames = ['Category', 'SubCategory', 'Type', 'Status', 'Level5', 'Level6'];
+        const pathNames = ['Level1', 'Level2', 'Level3', 'Level4', 'Level5', 'Level6'];
         for (let i = 0; i < pathNames.length; i++) {
             if (row[`path_${i}`] !== undefined) {
                 row[pathNames[i]] = row[`path_${i}`];

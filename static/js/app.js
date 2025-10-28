@@ -54,6 +54,23 @@ function setupEventListeners() {
             this.style.height = Math.min(this.scrollHeight, 200) + 'px';
         });
     }
+
+    // JSONPath Query keyboard shortcut (Ctrl+Enter) and auto-expand
+    const jsonpathQuery = document.getElementById('jsonpathQuery');
+    if (jsonpathQuery) {
+        jsonpathQuery.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                executeJSONPathQuery();
+            }
+        });
+
+        // Auto-expand textarea as user types
+        jsonpathQuery.addEventListener('input', function() {
+            this.style.height = '32px';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+        });
+    }
 }
 
 function loadDefaultJSON() {
@@ -723,8 +740,8 @@ async function reloadDatabase() {
             }
         }
 
-        // Show database is ready
-        document.getElementById('pgliteSection').classList.remove('hide');
+        // Show query section is ready
+        document.getElementById('querySection').classList.remove('hide');
         document.getElementById('pgliteNotReady').classList.add('hide');
 
         // Update query placeholder with table info
@@ -781,10 +798,112 @@ async function executeSQLQuery() {
     }
 }
 
+function switchQueryMode(mode) {
+    // Update button states
+    document.querySelectorAll('.query-mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-mode') === mode);
+    });
+
+    // Show/hide appropriate sections
+    if (mode === 'sql') {
+        document.getElementById('sqlSection').classList.remove('hide');
+        document.getElementById('jsonpathSection').classList.add('hide');
+    } else if (mode === 'jsonpath') {
+        document.getElementById('sqlSection').classList.add('hide');
+        document.getElementById('jsonpathSection').classList.remove('hide');
+    }
+
+    // Clear any previous errors
+    document.getElementById('queryError').classList.add('hide');
+    document.getElementById('queryError').textContent = '';
+}
+
+function executeJSONPathQuery() {
+    const queryErrorEl = document.getElementById('queryError');
+
+    // Clear any previous error
+    queryErrorEl.classList.add('hide');
+    queryErrorEl.textContent = '';
+
+    try {
+        if (!jsonData) {
+            showQueryError('No JSON data loaded. Please parse JSON first.');
+            return;
+        }
+
+        const query = document.getElementById('jsonpathQuery').value.trim();
+        if (!query) {
+            showQueryError('Please enter a JSONPath query');
+            return;
+        }
+
+        // Check if JSONPath library is available
+        if (!window.jsonpath) {
+            showQueryError('JSONPath library not loaded. Please refresh the page.');
+            console.error('window.jsonpath is not available. Available:', Object.keys(window).filter(k => k.toLowerCase().includes('json')));
+            return;
+        }
+
+        // Execute JSONPath query
+        try {
+            // Using jsonpath library (lowercase) - it exports jsonpath.query()
+            const result = window.jsonpath.query(jsonData, query);
+
+            // Handle result
+            if (!result || result.length === 0) {
+                displayQueryResult([]);
+                showStatus('Query executed successfully (0 results)', 'success');
+            } else {
+                // Normalize result to array of objects for table display
+                const normalizedResult = normalizeJSONPathResult(result);
+                displayQueryResult(normalizedResult);
+                showStatus(`Query executed successfully (${normalizedResult.length} results)`, 'success');
+            }
+
+            // Scroll to results on success
+            setTimeout(() => {
+                document.getElementById('queryResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        } catch (e) {
+            document.getElementById('queryResult').classList.add('hide');
+            showQueryError('JSONPath query error: ' + e.message);
+        }
+
+    } catch (error) {
+        document.getElementById('queryResult').classList.add('hide');
+        showQueryError('Query error: ' + error.message);
+    }
+}
+
+function normalizeJSONPathResult(result) {
+    // If result is already an array of objects, return as is
+    if (Array.isArray(result) && result.length > 0 && typeof result[0] === 'object' && result[0] !== null && !Array.isArray(result[0])) {
+        return result;
+    }
+
+    // If result is a single object, wrap it in an array
+    if (!Array.isArray(result) && typeof result === 'object' && result !== null) {
+        return [result];
+    }
+
+    // If result is an array of primitives or mixed types, convert to objects
+    if (Array.isArray(result)) {
+        return result.map((item, index) => {
+            if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+                return item;
+            }
+            return { index: index, value: item };
+        });
+    }
+
+    // Single primitive value
+    return [{ value: result }];
+}
+
 function showQueryError(message) {
     const queryErrorEl = document.getElementById('queryError');
     const queryPanel = document.getElementById('queryPanel');
-    const pgliteSection = document.getElementById('pgliteSection');
+    const querySection = document.getElementById('querySection');
 
     // Show the error message
     queryErrorEl.textContent = message;
@@ -799,9 +918,9 @@ function showQueryError(message) {
         }
     }
 
-    // Show the input section if hidden
-    if (pgliteSection && pgliteSection.classList.contains('hide')) {
-        pgliteSection.classList.remove('hide');
+    // Show the query section if hidden
+    if (querySection && querySection.classList.contains('hide')) {
+        querySection.classList.remove('hide');
     }
 
     // Scroll to the error message
@@ -909,7 +1028,7 @@ function clearInput() {
     document.getElementById('noData').classList.add('hide');
     document.getElementById('columnSelector').classList.add('hide');
     document.getElementById('filterControls').classList.add('hide');
-    document.getElementById('pgliteSection').classList.add('hide');
+    document.getElementById('querySection').classList.add('hide');
     document.getElementById('detailsEmpty').classList.remove('hide');
     document.getElementById('detailsStatusMessage').classList.remove('show');
 }

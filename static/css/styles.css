@@ -362,6 +362,38 @@ button:hover {
     border-color: #f48771;
 }
 
+.query-mode-btn {
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.query-mode-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.query-mode-btn.active {
+    background: var(--accent-primary);
+    color: #fff;
+    border-color: var(--accent-primary);
+}
+
+.query-mode-section {
+    display: block;
+}
+
+.query-mode-section.hide {
+    display: none;
+}
+
 .search-filter-container {
     display: flex;
     gap: 8px;

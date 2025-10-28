@@ -30,6 +30,9 @@
         window.PGlite = PGlite;
     </script>
 
+    <!-- JSONPath library - using a simpler, more reliable library -->
+    <script src="https://cdn.jsdelivr.net/npm/jsonpath@1.1.1/jsonpath.min.js"></script>
+
     <!-- Styles -->
     <link rel="stylesheet" href="static/css/styles.css">
 </head>
@@ -159,14 +162,73 @@
                     Parse JSON to enable queries
                 </div>
 
-                <div id="pgliteSection" class="pglite-section hide">
-                    <div style="display: flex; gap: 6px; margin-bottom: 8px;">
-                        <textarea id="sqlQuery" class="query-input" placeholder="SELECT * FROM json_data LIMIT 10;"></textarea>
-                        <button class="btn-primary" onclick="executeSQLQuery()" title="Execute query (Ctrl+Enter)" style="height: auto; padding: 8px 12px; align-self: flex-start;">Execute</button>
+                <div id="querySection" class="hide">
+                    <!-- Query Mode Selector -->
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                        <button class="query-mode-btn active" onclick="switchQueryMode('sql')" data-mode="sql">SQL</button>
+                        <button class="query-mode-btn" onclick="switchQueryMode('jsonpath')" data-mode="jsonpath">JSONPath</button>
                     </div>
 
+                    <!-- SQL Query Interface -->
+                    <div id="sqlSection" class="query-mode-section">
+                        <div style="display: flex; gap: 6px; margin-bottom: 8px; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <textarea id="sqlQuery" class="query-input" placeholder="SELECT * FROM json_data LIMIT 10;"></textarea>
+                                <div style="margin-top: 6px; font-size: 11px; color: var(--text-secondary);">
+                                    <details style="cursor: pointer;">
+                                        <summary style="user-select: none;">Examples & Help</summary>
+                                        <div style="margin-top: 8px; padding: 8px; background: var(--bg-tertiary); border-radius: 4px; line-height: 1.6;">
+                                            <div><strong>Basic Queries:</strong></div>
+                                            <div><code>SELECT * FROM json_data LIMIT 10</code> - First 10 rows</div>
+                                            <div><code>SELECT name, email FROM json_data</code> - Specific columns</div>
+                                            <div><code>SELECT COUNT(*) FROM json_data</code> - Count rows</div>
+                                            <div style="margin-top: 8px;"><strong>Filtering:</strong></div>
+                                            <div><code>SELECT * FROM json_data WHERE salary > 90000</code> - Filter by salary</div>
+                                            <div><code>SELECT * FROM json_data WHERE department = 'Engineering'</code> - Filter by text</div>
+                                            <div><code>SELECT * FROM json_data WHERE name LIKE '%son'</code> - Pattern matching</div>
+                                            <div style="margin-top: 8px;"><strong>Aggregations:</strong></div>
+                                            <div><code>SELECT department, AVG(salary) FROM json_data GROUP BY department</code> - Average by group</div>
+                                            <div><code>SELECT department, COUNT(*) FROM json_data GROUP BY department</code> - Count by group</div>
+                                            <div style="margin-top: 8px;"><strong>Sorting:</strong></div>
+                                            <div><code>SELECT * FROM json_data ORDER BY salary DESC</code> - Sort descending</div>
+                                            <div><code>SELECT * FROM json_data ORDER BY name ASC</code> - Sort ascending</div>
+                                        </div>
+                                    </details>
+                                </div>
+                            </div>
+                            <button class="btn-primary" onclick="executeSQLQuery()" title="Execute query (Ctrl+Enter)" style="height: auto; padding: 8px 12px;">Execute</button>
+                        </div>
+                    </div>
+
+                    <!-- JSONPath Query Interface -->
+                    <div id="jsonpathSection" class="query-mode-section hide">
+                        <div style="display: flex; gap: 6px; margin-bottom: 8px; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <textarea id="jsonpathQuery" class="query-input" placeholder="$.users[?(@.salary > 90000)]"></textarea>
+                                <div style="margin-top: 6px; font-size: 11px; color: var(--text-secondary);">
+                                    <details style="cursor: pointer;">
+                                        <summary style="user-select: none;">Examples & Help</summary>
+                                        <div style="margin-top: 8px; padding: 8px; background: var(--bg-tertiary); border-radius: 4px; line-height: 1.6;">
+                                            <div><code>$.users[*]</code> - All users</div>
+                                            <div><code>$..name</code> - All name properties (deep scan)</div>
+                                            <div><code>$.users[0]</code> - First user</div>
+                                            <div><code>$.users[-1]</code> - Last user</div>
+                                            <div><code>$.users[0:3]</code> - First 3 users</div>
+                                            <div><code>$.users[?(@.salary > 90000)]</code> - Filter by salary</div>
+                                            <div><code>$.users[?(@.department === 'Engineering')]</code> - Filter by department</div>
+                                            <div><code>$.users[*].name</code> - All user names</div>
+                                        </div>
+                                    </details>
+                                </div>
+                            </div>
+                            <button class="btn-primary" onclick="executeJSONPathQuery()" title="Execute query (Ctrl+Enter)" style="height: auto; padding: 8px 12px;">Execute</button>
+                        </div>
+                    </div>
+
+                    <!-- Query Error Display -->
                     <div id="queryError" class="hide" style="color: #ff4444; background: rgba(255, 68, 68, 0.1); padding: 8px 12px; margin-bottom: 8px; border-radius: 4px; font-size: 12px; border-left: 3px solid #ff4444;"></div>
 
+                    <!-- Query Result Display -->
                     <div id="queryResult" class="query-result hide">
                         <div id="resultContent"></div>
                     </div>

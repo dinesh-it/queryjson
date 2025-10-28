@@ -42,10 +42,10 @@ This document outlines the development roadmap for QueryJSON. Our goal is to evo
 **Focus**: Advanced query capabilities and better data exploration
 
 ### 2.1 Query Language Support
-- [ ] **JSONPath Support** - Query JSON using JSONPath expressions
+- [x] **JSONPath Support** - Query JSON using JSONPath expressions
   - Examples: `$.users[?(@.age > 25)]`, `$..name`
   - Interactive JSONPath builder
-  - Syntax highlighting for queries
+  - Query examples and help
 
 - [ ] **JMESPath Support** - AWS CLI-style queries
   - Examples: `users[?salary > \`90000\`]`
@@ -76,9 +76,9 @@ This document outlines the development roadmap for QueryJSON. Our goal is to evo
 
 ### 2.3 Advanced Filtering
 - [ ] **Regex Filtering** - Pattern matching in filters
-- [ ] **Multi-column Filters** - Filter across multiple columns simultaneously
+- [ ] **Multi-column Filters** - Filter across multiple columns simultaneously (Partial: multiple filters with AND logic exist)
 - [ ] **Date Range Filters** - Calendar picker for date columns
-- [ ] **Null/Empty Filters** - Quick filters for null or empty values
+- [x] **Null/Empty Filters** - Quick filters for null or empty values
 
 ### 2.4 Data Transformation
 - [ ] **Column Calculations** - Create computed columns

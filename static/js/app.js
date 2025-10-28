@@ -492,6 +492,8 @@ function getFilteredData() {
                         return String(value).toLowerCase().endsWith(filterVal.toLowerCase());
                     case 'isnull':
                         return value === null || value === undefined || value === '';
+                    case 'isnotnull':
+                        return value !== null && value !== undefined && value !== '';
                     case 'gt':
                         return Number(value) > Number(filterVal);
                     case 'lt':
@@ -593,6 +595,7 @@ function renderFilters() {
                 <option value="starts" ${filter.operator === 'starts' ? 'selected' : ''}>Starts with</option>
                 <option value="ends" ${filter.operator === 'ends' ? 'selected' : ''}>Ends with</option>
                 <option value="isnull" ${filter.operator === 'isnull' ? 'selected' : ''}>IS NULL/Empty</option>
+                <option value="isnotnull" ${filter.operator === 'isnotnull' ? 'selected' : ''}>IS NOT NULL/Empty</option>
                 <option value="gt" ${filter.operator === 'gt' ? 'selected' : ''}>Greater than</option>
                 <option value="lt" ${filter.operator === 'lt' ? 'selected' : ''}>Less than</option>
                 <option value="gte" ${filter.operator === 'gte' ? 'selected' : ''}>≥</option>
@@ -737,15 +740,21 @@ async function reloadDatabase() {
 }
 
 async function executeSQLQuery() {
+    const queryErrorEl = document.getElementById('queryError');
+
+    // Clear any previous error
+    queryErrorEl.classList.add('hide');
+    queryErrorEl.textContent = '';
+
     try {
         if (!pgliteDB) {
-            showStatus('Database not initialized yet. Please wait and try again.', 'error');
+            showQueryError('Database not initialized yet. Please wait and try again.');
             return;
         }
 
         const query = document.getElementById('sqlQuery').value.trim();
         if (!query) {
-            showStatus('Please enter a SQL query', 'error');
+            showQueryError('Please enter a SQL query');
             return;
         }
 
@@ -757,15 +766,48 @@ async function executeSQLQuery() {
             const rows = result.rows || result || [];
             displayQueryResult(Array.isArray(rows) ? rows : []);
             showStatus('Query executed successfully', 'success');
+            // Scroll to results on success
+            setTimeout(() => {
+                document.getElementById('queryResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
         } catch (e) {
-            showStatus('Query error: ' + e.message, 'error');
             document.getElementById('queryResult').classList.add('hide');
+            showQueryError('Query error: ' + e.message);
         }
 
     } catch (error) {
-        showStatus('Query error: ' + error.message, 'error');
         document.getElementById('queryResult').classList.add('hide');
+        showQueryError('Query error: ' + error.message);
     }
+}
+
+function showQueryError(message) {
+    const queryErrorEl = document.getElementById('queryError');
+    const queryPanel = document.getElementById('queryPanel');
+    const pgliteSection = document.getElementById('pgliteSection');
+
+    // Show the error message
+    queryErrorEl.textContent = message;
+    queryErrorEl.classList.remove('hide');
+
+    // Expand the query panel if collapsed
+    if (queryPanel.classList.contains('collapsed')) {
+        queryPanel.classList.remove('collapsed');
+        const btn = document.getElementById('querySectionToggle');
+        if (btn) {
+            btn.textContent = 'Hide Section';
+        }
+    }
+
+    // Show the input section if hidden
+    if (pgliteSection && pgliteSection.classList.contains('hide')) {
+        pgliteSection.classList.remove('hide');
+    }
+
+    // Scroll to the error message
+    setTimeout(() => {
+        queryErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
 }
 
 function displayQueryResult(result) {
@@ -791,7 +833,7 @@ function displayQueryResult(result) {
             keys.forEach(key => {
                 const value = row[key];
                 const displayValue = value === null || value === undefined ? 'NULL' : String(value);
-                html += `<td>${escapeHtml(displayValue.substring(0, 100))}</td>`;
+                html += `<td>${escapeHtml(displayValue)}</td>`;
             });
             html += '</tr>';
         });

@@ -62,16 +62,16 @@
             </div>
 
             <!-- Configuration Panel -->
-            <div class="panel" id="configPanel" style="display: flex; flex-direction: column;">
+            <div class="panel" id="configPanel">
                 <h2><span class="section-icon"></span> CHOOSE COLUMNS</h2>
 
-                <div class="panel-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                    <div id="columnSelector" class="column-selector hide" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <div class="panel-content">
+                    <div id="columnSelector" class="column-selector hide" style="display: flex; flex-direction: column;">
                         <div class="button-group">
                             <button class="btn-secondary btn-sm" onclick="selectAllColumns()">All</button>
                             <button class="btn-secondary btn-sm" onclick="deselectAllColumns()">None</button>
                         </div>
-                        <div id="columnList" class="column-list" style="flex: 1; overflow-y: auto;"></div>
+                        <div id="columnList" class="column-list" style="max-height: 200px; overflow-y: auto;"></div>
                     </div>
                 </div>
             </div>
@@ -164,6 +164,8 @@
                         <textarea id="sqlQuery" class="query-input" placeholder="SELECT * FROM json_data LIMIT 10;"></textarea>
                         <button class="btn-primary" onclick="executeSQLQuery()" title="Execute query (Ctrl+Enter)" style="height: auto; padding: 8px 12px; align-self: flex-start;">Execute</button>
                     </div>
+
+                    <div id="queryError" class="hide" style="color: #ff4444; background: rgba(255, 68, 68, 0.1); padding: 8px 12px; margin-bottom: 8px; border-radius: 4px; font-size: 12px; border-left: 3px solid #ff4444;"></div>
 
                     <div id="queryResult" class="query-result hide">
                         <div id="resultContent"></div>

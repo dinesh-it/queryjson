@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="QueryJSON - Transform, query, and explore JSON data with an interactive table viewer and SQL queries powered by PGLite">
+    <meta name="keywords" content="json, table, converter, sql, query, pglite, json viewer, json explorer">
+    <meta name="author" content="Dinesh D">
+    <title>QueryJSON - JSON to Table Converter & Query Tool</title>
+
+    <!-- PGLite - PostgreSQL in the browser -->
+    <script type="module">
+        import { PGlite } from 'https://cdn.jsdelivr.net/npm/@electric-sql/pglite/dist/index.js';
+        window.PGlite = PGlite;
+    </script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>QueryJSON</h1>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="collapse-btn" id="gridCollapseBtn" onclick="toggleMainGrid()" title="Collapse top panels">▼</button>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <!-- Input Panel -->
+            <div class="panel" style="display: flex; flex-direction: column;">
+                <h2><span class="section-icon"></span> INPUT</h2>
+                <div class="panel-content">
+                    <textarea id="jsonInput" placeholder='{"key": "value"}' style="flex: 1; resize: none;"></textarea>
+
+                    <div style="display: flex; gap: 6px; margin-top: 8px;">
+                        <input type="file" id="fileInput" accept=".json,.txt" style="flex: 1; padding: 6px 8px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); border-radius: 4px; font-size: 12px; cursor: pointer;" />
+                        <button class="btn-primary" onclick="parseJSON()">Parse</button>
+                        <button class="btn-secondary" onclick="clearInput()">Clear</button>
+                    </div>
+
+                    <div id="statusMessage" class="status-message"></div>
+                </div>
+            </div>
+
+            <!-- Configuration Panel -->
+            <div class="panel" id="configPanel">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                        <h2 style="margin: 0;"><span class="section-icon"></span> CONFIG</h2>
+                    </div>
+                    <h3 style="font-size: 11px; color: var(--accent-primary); text-transform: uppercase; margin: 0;">Columns</h3>
+                </div>
+
+                <div class="panel-content">
+                    <div>
+                        <div id="columnSelector" class="column-selector hide">
+                            <div class="button-group">
+                                <button class="btn-secondary btn-sm" onclick="selectAllColumns()">All</button>
+                                <button class="btn-secondary btn-sm" onclick="deselectAllColumns()">None</button>
+                            </div>
+                            <div id="columnList" class="column-list"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 6px;">Options</h3>
+                        <div id="optionsPanel" style="display: none;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; cursor: pointer; font-size: 12px;">
+                                <input type="checkbox" id="includeIndexes" checked>
+                                <span>Array indexes</span>
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Expanded Details Panel -->
+            <div class="panel">
+                <h2><span class="section-icon"></span> DETAILS</h2>
+                <div class="panel-content">
+                    <div id="jsonStructureInfo" class="json-structure-info hide"></div>
+
+                    <div class="stats" id="statsContainer" style="display: none;">
+                        <div class="stat-card">
+                            <div class="stat-value" id="statRows">0</div>
+                            <div class="stat-label">Rows</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statColumns">0</div>
+                            <div class="stat-label">Cols</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statFiltered">0</div>
+                            <div class="stat-label">View</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 6px;">Filters</h3>
+                        <div id="filterControls" class="filter-controls hide">
+                            <div id="filterList"></div>
+                            <button class="btn-secondary" onclick="addFilterRow()">+ Add</button>
+                        </div>
+                    </div>
+
+                    <div id="detailsEmpty" style="color: var(--text-secondary); font-size: 12px; padding: 12px; text-align: center;">
+                        Parse JSON to see details
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Table Panel -->
+        <div class="panel" style="mid-height: 10px;" id="outputPanel-title">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <h2 style="margin: 0; flex: 1;"><span class="section-icon"></span> OUTPUT</h2>
+                <button class="collapse-btn" onclick="toggleOutputPanel()" title="Collapse OUTPUT panel">◄</button>
+            </div>
+        </div>
+
+        <div class="panel" id="outputPanel">
+            <div class="panel-content">
+                <div class="search-filter-container">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search..." onkeyup="applySearch()">
+                    </div>
+                    <div class="button-group">
+                        <button class="btn-secondary" onclick="exportToCSV()">CSV</button>
+                        <button class="btn-secondary" onclick="exportToJSON()">JSON</button>
+                    </div>
+                </div>
+
+                <div id="tableContainer" class="table-wrapper hide">
+                    <table id="dataTable">
+                        <thead id="tableHead"></thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="noData" class="no-data hide">
+                    <p>No data. Parse JSON to start.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- PGLite Section -->
+        <div class="panel" style="min-height: 50px;">
+            <h2><span class="section-icon"></span> QUERY</h2>
+            <div class="panel-content">
+                <div id="pgliteNotReady" style="text-align: center; color: var(--text-secondary); padding: 12px; font-size: 12px;">
+                    Parse JSON to enable queries
+                </div>
+
+                <div id="pgliteSection" class="pglite-section hide">
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+                        <span style="color: var(--text-primary); font-size: 12px; font-weight: 500;">DB:</span>
+                        <span id="dbTableName" style="color: var(--accent-primary); font-size: 12px; font-family: 'Fira Code', monospace;">json_data</span>
+                        <button class="btn-secondary" onclick="reloadDatabase()" title="Reload database from current data" style="margin-left: auto; padding: 4px 8px; font-size: 11px;">Reload</button>
+                    </div>
+
+                    <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                        <textarea id="sqlQuery" class="query-input" placeholder="SELECT * FROM json_data LIMIT 10;"></textarea>
+                        <button class="btn-primary" onclick="executeSQLQuery()" title="Execute query (Ctrl+Enter)" style="height: auto; padding: 8px 12px; align-self: flex-start;">Execute</button>
+                    </div>
+
+                    <div id="queryResult" class="query-result hide">
+                        <div id="resultContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-message">
+                If this tool saved your day or helped you out, consider buying me a coffee. Your support means a lot!
+            </div>
+            <div class="footer-buttons">
+                <a href="https://www.buymeacoffee.com/dineshd" target="_blank">
+                    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee">
+                </a>
+            </div>
+            <div style="margin-top: 8px; font-size: 11px; color: var(--text-secondary);">
+                <a href="https://github.com/dinesh-it/queryjson" target="_blank" style="color: var(--accent-primary); text-decoration: none;">View on GitHub</a>
+                |
+                <a href="docs/ROADMAP.md" target="_blank" style="color: var(--accent-primary); text-decoration: none;">Roadmap</a>
+                |
+                <a href="LICENSE" target="_blank" style="color: var(--accent-primary); text-decoration: none;">MIT License</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="static/js/app.js"></script>
+</body>
+</html>

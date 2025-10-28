@@ -1,0 +1,35 @@
+{
+  "name": "queryjson",
+  "version": "1.0.0",
+  "description": "Transform, query, and explore JSON data with an interactive table viewer and SQL queries powered by PGLite",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 8000 -o",
+    "dev": "npx http-server -p 8000 -o -c-1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dinesh-it/queryjson.git"
+  },
+  "keywords": [
+    "json",
+    "table",
+    "converter",
+    "sql",
+    "query",
+    "pglite",
+    "json-viewer",
+    "json-explorer",
+    "data-analysis",
+    "data-transformation",
+    "csv-export",
+    "postgresql",
+    "browser-database"
+  ],
+  "author": "Dinesh D",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dinesh-it/queryjson/issues"
+  },
+  "homepage": "https://github.com/dinesh-it/queryjson#readme"
+}

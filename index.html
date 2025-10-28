@@ -12,10 +12,10 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="QueryJSON - Transform, query, and explore JSON data with an interactive table viewer and SQL queries powered by PGLite">
-    <meta name="keywords" content="json, table, converter, sql, query, pglite, json viewer, json explorer">
+    <meta name="description" content="QueryJSON - Transform, query, and explore JSON/XML/CSV data with an interactive table viewer and SQL queries powered by PGLite">
+    <meta name="keywords" content="json, xml, csv, table, converter, sql, query, pglite, json viewer, json explorer, xml to json, csv to json">
     <meta name="author" content="Dinesh D">
-    <title>QueryJSON - JSON to Table Converter & Query Tool</title>
+    <title>QueryJSON - JSON/XML/CSV to Table Converter & Query Tool</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
@@ -54,10 +54,10 @@
             <div class="panel" style="display: flex; flex-direction: column;">
                 <h2><span class="section-icon"></span> INPUT</h2>
                 <div class="panel-content">
-                    <textarea id="jsonInput" placeholder='{"key": "value"}' style="flex: 1; resize: none;"></textarea>
+                    <textarea id="jsonInput" placeholder='Paste JSON, XML, or CSV data here...&#10;&#10;JSON: {"key": "value"}&#10;XML: <root><item>data</item></root>&#10;CSV: name,age,city&#10;     John,30,NYC' style="flex: 1; resize: none;"></textarea>
 
                     <div style="display: flex; gap: 6px; margin-top: 8px;">
-                        <input type="file" id="fileInput" accept=".json,.txt" style="flex: 1; padding: 6px 8px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); border-radius: 4px; font-size: 12px; cursor: pointer;" />
+                        <input type="file" id="fileInput" accept=".json,.xml,.csv,.txt" style="flex: 1; padding: 6px 8px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); border-radius: 4px; font-size: 12px; cursor: pointer;" />
                         <button class="btn-primary" onclick="parseJSON()">Parse</button>
                         <button class="btn-secondary" onclick="clearInput()">Clear</button>
                     </div>

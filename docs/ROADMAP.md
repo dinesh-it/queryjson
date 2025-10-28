@@ -47,10 +47,6 @@ This document outlines the development roadmap for QueryJSON. Our goal is to evo
   - Interactive JSONPath builder
   - Query examples and help
 
-- [ ] **JMESPath Support** - AWS CLI-style queries
-  - Examples: `users[?salary > \`90000\`]`
-  - Great for complex transformations
-
 - [ ] **GraphQL-like Queries** - Declarative data fetching
   - Select specific fields
   - Nested queries
@@ -64,15 +60,6 @@ This document outlines the development roadmap for QueryJSON. Our goal is to evo
 - [ ] **Saved Queries** - Name and organize frequent queries
   - Categories/tags
   - Share queries via URL
-
-- [ ] **SQL Query Templates** - Pre-built query snippets
-  - Common aggregations
-  - JOINs, GROUP BY examples
-  - Statistical functions
-
-- [ ] **Query Explanation** - Understand what a query does
-  - EXPLAIN ANALYZE support
-  - Query performance metrics
 
 ### 2.3 Advanced Filtering
 - [ ] **Regex Filtering** - Pattern matching in filters

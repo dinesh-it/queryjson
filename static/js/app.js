@@ -136,7 +136,19 @@ function parseJSON() {
         const input = document.getElementById('jsonInput').value.trim();
 
         if (!input) {
-            showStatus('Please paste or upload JSON data', 'error');
+            showStatus('Please paste or upload JSON/XML/CSV data', 'error');
+            return;
+        }
+
+        // Check if input is XML
+        if (input.startsWith('<?xml') || input.startsWith('<')) {
+            parseXML(input);
+            return;
+        }
+
+        // Check if input is CSV (contains commas and doesn't start with { or [)
+        if (!input.startsWith('{') && !input.startsWith('[') && (input.includes(',') || input.includes('\t'))) {
+            parseCSV(input);
             return;
         }
 
@@ -161,6 +173,201 @@ function parseJSON() {
     } catch (error) {
         showStatus('Invalid JSON: ' + error.message, 'error');
     }
+}
+
+function parseXML(xmlString) {
+    try {
+        // Parse XML using native browser DOMParser
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+
+        // Check for parsing errors
+        const parserError = xmlDoc.getElementsByTagName('parsererror');
+        if (parserError.length > 0) {
+            throw new Error('XML parsing error: ' + parserError[0].textContent);
+        }
+
+        // Convert XML DOM to JSON
+        jsonData = xmlToJson(xmlDoc);
+
+        // Update the input textarea to show the converted JSON
+        document.getElementById('jsonInput').value = JSON.stringify(jsonData, null, 2);
+
+        // Normalize data to array of objects
+        normalizeData();
+
+        // Detect structure
+        detectStructure();
+
+        // Build column list
+        buildColumns();
+
+        // Build table
+        buildTable();
+
+        // Initialize PGLite
+        initializePGLite();
+
+        showStatus('XML converted and parsed successfully! ' + parsedData.length + ' records found.', 'success');
+    } catch (error) {
+        showStatus('Invalid XML: ' + error.message, 'error');
+    }
+}
+
+function xmlToJson(xml) {
+    // Create the return object
+    let obj = {};
+
+    if (xml.nodeType === 1) { // element node
+        // Handle attributes
+        if (xml.attributes.length > 0) {
+            for (let j = 0; j < xml.attributes.length; j++) {
+                const attribute = xml.attributes.item(j);
+                obj[attribute.nodeName] = attribute.nodeValue;
+            }
+        }
+    } else if (xml.nodeType === 3) { // text node
+        obj = xml.nodeValue.trim();
+    }
+
+    // Handle child nodes
+    if (xml.hasChildNodes()) {
+        for (let i = 0; i < xml.childNodes.length; i++) {
+            const item = xml.childNodes.item(i);
+            const nodeName = item.nodeName;
+
+            // Skip text nodes that are just whitespace
+            if (item.nodeType === 3) {
+                const text = item.nodeValue.trim();
+                if (text) {
+                    // If we already have properties, add text as 'value'
+                    if (Object.keys(obj).length > 0) {
+                        obj['value'] = text;
+                    } else {
+                        return text;
+                    }
+                }
+                continue;
+            }
+
+            if (typeof obj[nodeName] === 'undefined') {
+                const converted = xmlToJson(item);
+                obj[nodeName] = converted;
+            } else {
+                // If this node name already exists, convert to array
+                if (!Array.isArray(obj[nodeName])) {
+                    obj[nodeName] = [obj[nodeName]];
+                }
+                obj[nodeName].push(xmlToJson(item));
+            }
+        }
+    }
+
+    return obj;
+}
+
+function parseCSV(csvString) {
+    try {
+        // Parse CSV to array of objects
+        const rows = csvString.split('\n').filter(row => row.trim());
+
+        if (rows.length === 0) {
+            throw new Error('CSV data is empty');
+        }
+
+        // Detect delimiter (comma, semicolon, or tab)
+        const firstRow = rows[0];
+        let delimiter = ',';
+        if (firstRow.includes('\t')) {
+            delimiter = '\t';
+        } else if (firstRow.includes(';') && firstRow.split(';').length > firstRow.split(',').length) {
+            delimiter = ';';
+        }
+
+        // Parse header row
+        const headers = parseCSVRow(rows[0], delimiter);
+
+        // Parse data rows
+        const data = [];
+        for (let i = 1; i < rows.length; i++) {
+            const values = parseCSVRow(rows[i], delimiter);
+            if (values.length === 0 || (values.length === 1 && values[0] === '')) {
+                continue; // Skip empty rows
+            }
+
+            const obj = {};
+            headers.forEach((header, index) => {
+                let value = values[index] || '';
+                // Try to convert to number if it looks like a number
+                if (value !== '' && !isNaN(value) && value.trim() !== '') {
+                    const num = parseFloat(value);
+                    if (!isNaN(num)) {
+                        value = num;
+                    }
+                }
+                obj[header] = value;
+            });
+            data.push(obj);
+        }
+
+        jsonData = { data: data };
+
+        // Update the input textarea to show the converted JSON
+        document.getElementById('jsonInput').value = JSON.stringify(jsonData, null, 2);
+
+        // Normalize data to array of objects
+        normalizeData();
+
+        // Detect structure
+        detectStructure();
+
+        // Build column list
+        buildColumns();
+
+        // Build table
+        buildTable();
+
+        // Initialize PGLite
+        initializePGLite();
+
+        showStatus('CSV converted and parsed successfully! ' + parsedData.length + ' records found.', 'success');
+    } catch (error) {
+        showStatus('Invalid CSV: ' + error.message, 'error');
+    }
+}
+
+function parseCSVRow(row, delimiter) {
+    // Simple CSV parser that handles quoted fields
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < row.length; i++) {
+        const char = row[i];
+        const nextChar = row[i + 1];
+
+        if (char === '"') {
+            if (inQuotes && nextChar === '"') {
+                // Escaped quote
+                current += '"';
+                i++; // Skip next quote
+            } else {
+                // Toggle quote mode
+                inQuotes = !inQuotes;
+            }
+        } else if (char === delimiter && !inQuotes) {
+            // End of field
+            result.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+
+    // Add last field
+    result.push(current.trim());
+
+    return result;
 }
 
 function normalizeData() {
@@ -1031,4 +1238,10 @@ function clearInput() {
     document.getElementById('querySection').classList.add('hide');
     document.getElementById('detailsEmpty').classList.remove('hide');
     document.getElementById('detailsStatusMessage').classList.remove('show');
+
+    // Reset stats
+    document.getElementById('statRows').textContent = '0';
+    document.getElementById('statColumns').textContent = '0';
+    document.getElementById('statFiltered').textContent = '0';
+    document.getElementById('statsContainer').style.display = 'none';
 }

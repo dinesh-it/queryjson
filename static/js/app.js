@@ -38,7 +38,7 @@ function setupEventListeners() {
         }
     });
 
-    // SQL Query keyboard shortcut (Ctrl+Enter)
+    // SQL Query keyboard shortcut (Ctrl+Enter) and auto-expand
     const sqlQuery = document.getElementById('sqlQuery');
     if (sqlQuery) {
         sqlQuery.addEventListener('keydown', (e) => {
@@ -46,6 +46,12 @@ function setupEventListeners() {
                 e.preventDefault();
                 executeSQLQuery();
             }
+        });
+
+        // Auto-expand textarea as user types
+        sqlQuery.addEventListener('input', function() {
+            this.style.height = '32px';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
         });
     }
 }
@@ -57,39 +63,47 @@ function loadDefaultJSON() {
     }, 100);
 }
 
-function toggleOutputPanel() {
+function toggleTopSection() {
+    const topSection = document.getElementById('topSection');
+    const btn = document.getElementById('topSectionToggle');
+
+    topSection.classList.toggle('collapsed');
+
+    if (topSection.classList.contains('collapsed')) {
+        btn.textContent = 'Show Section';
+    } else {
+        btn.textContent = 'Hide Section';
+    }
+}
+
+function toggleOutputSection() {
     const outputPanel = document.getElementById('outputPanel');
-    const outputPanel_title = document.getElementById('outputPanel-title');
-    const btn = outputPanel_title.querySelector('.collapse-btn');
+    const btn = document.getElementById('outputSectionToggle');
 
     outputPanel.classList.toggle('collapsed');
 
     if (outputPanel.classList.contains('collapsed')) {
-        btn.textContent = '▶';
-        btn.title = 'Expand OUTPUT panel';
+        btn.textContent = 'Show Section';
     } else {
-        btn.textContent = '◄';
-        btn.title = 'Collapse OUTPUT panel';
+        btn.textContent = 'Hide Section';
     }
 }
 
-function toggleMainGrid() {
-    const mainGrid = document.querySelector('.main-grid');
-    const btn = document.getElementById('gridCollapseBtn');
+function toggleQuerySection() {
+    const queryPanel = document.getElementById('queryPanel');
+    const btn = document.getElementById('querySectionToggle');
 
-    mainGrid.classList.toggle('collapsed');
+    queryPanel.classList.toggle('collapsed');
 
-    if (mainGrid.classList.contains('collapsed')) {
-        btn.textContent = '▲';
-        btn.title = 'Expand top panels';
+    if (queryPanel.classList.contains('collapsed')) {
+        btn.textContent = 'Show Section';
     } else {
-        btn.textContent = '▼';
-        btn.title = 'Collapse top panels';
+        btn.textContent = 'Hide Section';
     }
 }
 
 function showStatus(message, type = 'success') {
-    const statusEl = document.getElementById('statusMessage');
+    const statusEl = document.getElementById('detailsStatusMessage');
     statusEl.textContent = message;
     statusEl.className = `status-message show ${type}`;
 
@@ -271,20 +285,6 @@ function csvToRows(csvRows) {
 function detectStructure() {
     if (parsedData.length === 0) return;
 
-    const sample = parsedData[0];
-    let details = [];
-
-    if (typeof sample === 'object') {
-        const keys = Object.keys(sample);
-        details.push(`<strong>Columns:</strong> ${keys.length}`);
-        details.push(`<strong>Rows:</strong> ${parsedData.length}`);
-        details.push(`<strong>Fields:</strong> ${keys.slice(0, 5).join(', ')}${keys.length > 5 ? '...' : ''}`);
-    }
-
-    const infoEl = document.getElementById('jsonStructureInfo');
-    infoEl.innerHTML = `${details.map(d => `• ${d}`).join('<br>')}`;
-    infoEl.classList.remove('hide');
-
     // Hide empty state
     const detailsEmpty = document.getElementById('detailsEmpty');
     if (detailsEmpty) {
@@ -309,16 +309,6 @@ function buildColumns() {
 
     document.getElementById('columnSelector').classList.remove('hide');
     document.getElementById('filterControls').classList.remove('hide');
-    document.getElementById('optionsPanel').style.display = 'block';
-
-    // Add change listener to index checkbox
-    const indexCheckbox = document.getElementById('includeIndexes');
-    indexCheckbox.removeEventListener('change', handleIndexChange);
-    indexCheckbox.addEventListener('change', handleIndexChange);
-}
-
-function handleIndexChange() {
-    parseJSON();
 }
 
 function renderColumnList() {
@@ -479,7 +469,12 @@ function getFilteredData() {
     if (filters.length > 0) {
         filtered = filtered.filter(row => {
             return filters.every(filter => {
-                if (!filter.column || !filter.operator || filter.value === '') return true;
+                // Skip filter if column or operator not selected
+                if (!filter.column || !filter.operator) return true;
+
+                // Skip filter if value is empty AND operator requires a value
+                const operatorsNeedingValue = ['equals', 'notequals', 'contains', 'starts', 'ends', 'gt', 'lt', 'gte', 'lte'];
+                if (operatorsNeedingValue.includes(filter.operator) && filter.value === '') return true;
 
                 const value = row[filter.column];
                 const filterVal = filter.value;
@@ -487,12 +482,16 @@ function getFilteredData() {
                 switch (filter.operator) {
                     case 'equals':
                         return String(value).toLowerCase() === filterVal.toLowerCase();
+                    case 'notequals':
+                        return String(value).toLowerCase() !== filterVal.toLowerCase();
                     case 'contains':
                         return String(value).toLowerCase().includes(filterVal.toLowerCase());
                     case 'starts':
                         return String(value).toLowerCase().startsWith(filterVal.toLowerCase());
                     case 'ends':
                         return String(value).toLowerCase().endsWith(filterVal.toLowerCase());
+                    case 'isnull':
+                        return value === null || value === undefined || value === '';
                     case 'gt':
                         return Number(value) > Number(filterVal);
                     case 'lt':
@@ -558,8 +557,21 @@ function getSortIndicator(column) {
 }
 
 function addFilterRow() {
-    filters.push({ column: '', operator: 'contains', value: '' });
+    filters.push({ column: '', operator: 'equals', value: '' });
     renderFilters();
+    toggleApplyButton();
+}
+
+function applyFilters() {
+    buildTable();
+    showStatus('Filters applied successfully', 'success');
+}
+
+function toggleApplyButton() {
+    const applyBtn = document.getElementById('applyFilterBtn');
+    if (applyBtn) {
+        applyBtn.style.display = filters.length > 0 ? 'flex' : 'none';
+    }
 }
 
 function renderFilters() {
@@ -575,10 +587,12 @@ function renderFilters() {
                 ${allColumns.map(col => `<option value="${col}" ${filter.column === col ? 'selected' : ''}>${escapeHtml(col)}</option>`).join('')}
             </select>
             <select onchange="updateFilter(${index}, 'operator', this.value)">
-                <option value="contains" ${filter.operator === 'contains' ? 'selected' : ''}>Contains</option>
                 <option value="equals" ${filter.operator === 'equals' ? 'selected' : ''}>Equals</option>
+                <option value="notequals" ${filter.operator === 'notequals' ? 'selected' : ''}>Not Equals</option>
+                <option value="contains" ${filter.operator === 'contains' ? 'selected' : ''}>Contains</option>
                 <option value="starts" ${filter.operator === 'starts' ? 'selected' : ''}>Starts with</option>
                 <option value="ends" ${filter.operator === 'ends' ? 'selected' : ''}>Ends with</option>
+                <option value="isnull" ${filter.operator === 'isnull' ? 'selected' : ''}>IS NULL/Empty</option>
                 <option value="gt" ${filter.operator === 'gt' ? 'selected' : ''}>Greater than</option>
                 <option value="lt" ${filter.operator === 'lt' ? 'selected' : ''}>Less than</option>
                 <option value="gte" ${filter.operator === 'gte' ? 'selected' : ''}>≥</option>
@@ -589,22 +603,19 @@ function renderFilters() {
         `;
         filterList.appendChild(div);
     });
-
-    if (filters.length > 0) {
-        buildTable();
-    }
 }
 
 function updateFilter(index, field, value) {
     if (filters[index]) {
         filters[index][field] = value;
-        buildTable();
     }
 }
 
 function removeFilter(index) {
     filters.splice(index, 1);
     renderFilters();
+    toggleApplyButton();
+    applyFilters();
 }
 
 function updateStats(data) {
@@ -713,8 +724,9 @@ async function reloadDatabase() {
         document.getElementById('pgliteSection').classList.remove('hide');
         document.getElementById('pgliteNotReady').classList.add('hide');
 
-        // Update table name display
-        document.getElementById('dbTableName').textContent = 'json_data (' + data.length + ' rows)';
+        // Update query placeholder with table info
+        const queryInput = document.getElementById('sqlQuery');
+        queryInput.placeholder = `SELECT * FROM json_data LIMIT 10;  -- Use table name: json_data (${data.length} rows)`;
 
         showStatus('Database loaded with ' + data.length + ' rows', 'success');
 
@@ -856,7 +868,6 @@ function clearInput() {
     document.getElementById('columnSelector').classList.add('hide');
     document.getElementById('filterControls').classList.add('hide');
     document.getElementById('pgliteSection').classList.add('hide');
-    document.getElementById('jsonStructureInfo').classList.add('hide');
     document.getElementById('detailsEmpty').classList.remove('hide');
-    document.getElementById('statusMessage').classList.remove('show');
+    document.getElementById('detailsStatusMessage').classList.remove('show');
 }

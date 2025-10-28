@@ -47,6 +47,17 @@ body {
     flex-shrink: 0;
 }
 
+.section-header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+}
+
+.section-header:hover {
+    background: rgba(37, 37, 38, 0.8);
+}
+
 h1 {
     color: var(--text-primary);
     font-size: 14px;
@@ -69,17 +80,18 @@ h1 {
     margin: 0;
     min-height: 300px;
     max-height: 50vh;
-    overflow-y: auto;
+    overflow: hidden;
     border-bottom: 1px solid var(--border-color);
-    transition: max-height 0.3s ease;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, margin 0.3s ease;
+    opacity: 1;
 }
 
 .main-grid.collapsed {
-    max-height: 32px;
-}
-
-.main-grid.collapsed > .panel {
-    display: none;
+    max-height: 0;
+    min-height: 0;
+    opacity: 0;
+    margin: 0;
+    border-bottom: none;
 }
 
 .panel {
@@ -89,9 +101,10 @@ h1 {
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    transition: min-width 0.3s ease;
-    min-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, padding 0.3s ease;
+    max-height: 100vh;
+    opacity: 1;
 }
 
 .panel:last-child {
@@ -105,41 +118,21 @@ h1 {
     min-height: 0;
     display: flex;
     flex-direction: column;
+    transition: opacity 0.3s ease;
+    opacity: 1;
+}
+
+.panel-content.collapsed {
+    display: none !important;
+    opacity: 0;
 }
 
 .panel.collapsed {
-    min-width: 40px;
-    padding: 8px 4px;
-    flex: 0;
-}
-
-.panel.collapsed h2 {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    margin: 0;
-    padding: 8px 0;
-    transform: rotate(180deg);
-    font-size: 11px;
-}
-
-.panel.collapsed .panel-content {
-    display: none !important;
-}
-
-.panel.collapsed > div:first-child {
-    display: flex !important;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 8px;
-    margin-bottom: 0 !important;
-}
-
-.panel.collapsed .collapse-btn {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    transform: rotate(180deg);
-    padding: 4px 0;
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
 }
 
 .collapse-btn {
@@ -158,6 +151,37 @@ h1 {
 .collapse-btn:hover {
     background: var(--bg-hover);
     border: 1px solid var(--border-color);
+}
+
+.toggle-text-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--accent-primary);
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 11px;
+    height: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 3px;
+}
+
+.toggle-text-btn:hover {
+    background: var(--bg-hover);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-text-btn:active {
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 .panel h2 {
@@ -281,7 +305,7 @@ textarea::placeholder {
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
-    margin: 8px 0;
+    margin: 0 0 6px 0;
     align-items: center;
 }
 
@@ -434,17 +458,18 @@ tbody tr:hover {
 
 .column-selector {
     background: var(--bg-tertiary);
-    padding: 8px;
-    margin-bottom: 8px;
+    padding: 6px;
+    margin: 0;
     border: 1px solid var(--border-color);
 }
 
 .column-list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    max-height: 150px;
+    gap: 3px;
     overflow-y: auto;
+    margin: 0;
+    padding: 0;
 }
 
 .column-item {
@@ -594,7 +619,10 @@ tbody tr:hover {
     font-size: 12px;
     margin-bottom: 6px;
     resize: none;
-    min-height: 80px;
+    min-height: 32px;
+    max-height: 200px;
+    overflow-y: auto;
+    transition: min-height 0.2s ease;
 }
 
 .query-input:focus {

@@ -27,21 +27,21 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Minify JavaScript and CSS
+      - name: Minify JavaScript and CSS with cache busting
         run: npm run minify
 
       - name: Check for changes
         id: git-check
         run: |
-          git diff --exit-code static/js/app.min.js static/css/styles.min.css || echo "changed=true" >> $GITHUB_OUTPUT
+          git diff --exit-code static/js/app.min.js static/css/styles.min.css index.html || echo "changed=true" >> $GITHUB_OUTPUT
 
-      - name: Commit minified files
+      - name: Commit minified files and cache-busted HTML
         if: steps.git-check.outputs.changed == 'true'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add static/js/app.min.js static/css/styles.min.css
-          git commit -m "Auto-minify JavaScript and CSS [skip ci]"
+          git add static/js/app.min.js static/css/styles.min.css index.html
+          git commit -m "Auto-minify assets and update cache-busting hashes [skip ci]"
 
       - name: Push changes
         if: steps.git-check.outputs.changed == 'true'

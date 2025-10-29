@@ -6,6 +6,10 @@ let selectedColumns = [];
 let filters = [];
 let pgliteDB = null;
 let sortConfig = { column: null, direction: 'asc' };
+let displayMode = 'grouped'; // 'grouped' or 'flattened'
+let isComplexStructure = false;
+let hierarchicalData = null; // Stores hierarchical structure with parent-child relationships
+let tableMetadata = []; // Stores metadata about all created tables for PGLite
 
 // Default sample JSON data
 const defaultJSON = {
@@ -119,12 +123,12 @@ function toggleQuerySection() {
     }
 }
 
-function showStatus(message, type = 'success') {
+function showStatus(message, type = 'success', persistent = false) {
     const statusEl = document.getElementById('detailsStatusMessage');
     statusEl.textContent = message;
     statusEl.className = `status-message show ${type}`;
 
-    if (type !== 'error') {
+    if (type !== 'error' && !persistent) {
         setTimeout(() => {
             statusEl.classList.remove('show');
         }, 3000);
@@ -160,6 +164,18 @@ function parseJSON() {
 
             jsonData = JSON.parse(input);
 
+            // Detect if structure is complex and show display mode selector
+            isComplexStructure = detectComplexStructure(jsonData);
+            const displayModeSelector = document.getElementById('displayModeSelector');
+            if (isComplexStructure) {
+                displayModeSelector.classList.remove('hide');
+            } else {
+                displayModeSelector.classList.add('hide');
+            }
+
+            // Clear any existing filters when parsing new data
+            filters = [];
+
             // Normalize data to array of objects
             normalizeData();
 
@@ -168,6 +184,10 @@ function parseJSON() {
 
             // Build column list
             buildColumns();
+
+            // Clear filter UI
+            renderFilters();
+            toggleApplyButton();
 
             // Build table
             buildTable();
@@ -203,6 +223,9 @@ function parseXML(xmlString) {
         // Update the input textarea to show the converted JSON
         document.getElementById('jsonInput').value = JSON.stringify(jsonData, null, 2);
 
+        // Clear any existing filters when parsing new data
+        filters = [];
+
         // Normalize data to array of objects
         normalizeData();
 
@@ -211,6 +234,10 @@ function parseXML(xmlString) {
 
         // Build column list
         buildColumns();
+
+        // Clear filter UI
+        renderFilters();
+        toggleApplyButton();
 
         // Build table
         buildTable();
@@ -328,6 +355,9 @@ function parseCSV(csvString) {
         // Update the input textarea to show the converted JSON
         document.getElementById('jsonInput').value = JSON.stringify(jsonData, null, 2);
 
+        // Clear any existing filters when parsing new data
+        filters = [];
+
         // Normalize data to array of objects
         normalizeData();
 
@@ -336,6 +366,10 @@ function parseCSV(csvString) {
 
         // Build column list
         buildColumns();
+
+        // Clear filter UI
+        renderFilters();
+        toggleApplyButton();
 
         // Build table
         buildTable();
@@ -386,14 +420,424 @@ function parseCSVRow(row, delimiter) {
 }
 
 function normalizeData() {
-    // Step 1: Flatten all paths to leaf values
-    const flatPaths = flattenToLeafPaths(jsonData);
+    // Check if data has arrays
+    const hasArrays = containsArrays(jsonData);
 
-    // Step 2: Convert to CSV-like format
-    const csvRows = pathsToCSV(flatPaths);
+    if (!hasArrays) {
+        // No arrays at all - use flattened mode regardless of displayMode
+        hierarchicalData = null;
+        // Step 1: Flatten all paths to leaf values
+        const flatPaths = flattenToLeafPaths(jsonData);
 
-    // Step 3: Parse CSV to rows with smart column grouping
-    parsedData = csvToRows(csvRows);
+        // Step 2: Convert to CSV-like format
+        const csvRows = pathsToCSV(flatPaths);
+
+        // Step 3: Parse CSV to rows with smart column grouping
+        parsedData = csvToRows(csvRows);
+    } else if (displayMode === 'grouped') {
+        // Has arrays - detect if we have hierarchical structure with multiple nested arrays
+        const structure = analyzeStructure(jsonData);
+
+        if (structure.hasMultipleNestedArrays) {
+            // Build hierarchical data structure
+            hierarchicalData = buildHierarchicalData(jsonData, structure);
+            // For initial display, show parent table
+            parsedData = hierarchicalData.parent.data;
+        } else {
+            // Simple structure - use existing logic
+            hierarchicalData = null;
+            parsedData = normalizeDataGrouped(jsonData);
+        }
+    } else {
+        // Fully flattened mode explicitly selected
+        hierarchicalData = null;
+        // Step 1: Flatten all paths to leaf values
+        const flatPaths = flattenToLeafPaths(jsonData);
+
+        // Step 2: Convert to CSV-like format
+        const csvRows = pathsToCSV(flatPaths);
+
+        // Step 3: Parse CSV to rows with smart column grouping
+        parsedData = csvToRows(csvRows);
+    }
+}
+
+// Analyze JSON structure to detect multiple nested arrays
+function analyzeStructure(obj, path = '', depth = 0) {
+    const result = {
+        hasMultipleNestedArrays: false,
+        nestedArrays: [], // [{path, parentPath, name}]
+        rootArray: null
+    };
+
+    // Unwrap single-key wrapper objects ONLY if they contain arrays
+    let unwrappedObj = obj;
+    if (typeof obj === 'object' && obj !== null && !Array.isArray(obj) && path === '') {
+        const keys = Object.keys(obj);
+        if (keys.length === 1) {
+            const value = obj[keys[0]];
+            // Only unwrap if it contains arrays
+            if (Array.isArray(value) || (typeof value === 'object' && value !== null && containsArrays(value))) {
+                unwrappedObj = value;
+            }
+        }
+    }
+
+    if (Array.isArray(unwrappedObj)) {
+        result.rootArray = path || 'root';
+
+        // Check items in the array for nested arrays
+        if (unwrappedObj.length > 0 && typeof unwrappedObj[0] === 'object' && unwrappedObj[0] !== null) {
+            const nestedArraysInItem = [];
+
+            for (const [key, value] of Object.entries(unwrappedObj[0])) {
+                if (Array.isArray(value)) {
+                    nestedArraysInItem.push(key);
+                } else if (typeof value === 'object' && value !== null) {
+                    // Check for wrapper objects containing arrays
+                    const subKeys = Object.keys(value);
+                    if (subKeys.length === 1 && Array.isArray(value[subKeys[0]])) {
+                        nestedArraysInItem.push(key);
+                    } else if (Object.values(value).some(v => Array.isArray(v))) {
+                        nestedArraysInItem.push(key);
+                    }
+                }
+            }
+
+            if (nestedArraysInItem.length > 1) {
+                result.hasMultipleNestedArrays = true;
+            }
+
+            // Recursively find all nested arrays
+            for (const [key, value] of Object.entries(unwrappedObj[0])) {
+                if (typeof value === 'object' && value !== null) {
+                    const childResult = analyzeStructure(value, key, depth + 1);
+                    result.nestedArrays.push(...childResult.nestedArrays);
+
+                    if (Array.isArray(value)) {
+                        result.nestedArrays.push({
+                            path: key,
+                            parentPath: path || 'root',
+                            name: key,
+                            depth: depth + 1
+                        });
+                    }
+                }
+            }
+        }
+    } else if (typeof unwrappedObj === 'object' && unwrappedObj !== null) {
+        // Check for multiple array properties at this level
+        const arrayProps = Object.entries(unwrappedObj).filter(([k, v]) => Array.isArray(v));
+
+        if (arrayProps.length > 1) {
+            result.hasMultipleNestedArrays = true;
+        }
+
+        for (const [key, value] of Object.entries(unwrappedObj)) {
+            if (typeof value === 'object' && value !== null) {
+                const childResult = analyzeStructure(value, path ? `${path}.${key}` : key, depth + 1);
+
+                if (childResult.hasMultipleNestedArrays) {
+                    result.hasMultipleNestedArrays = true;
+                }
+
+                result.nestedArrays.push(...childResult.nestedArrays);
+
+                if (childResult.rootArray) {
+                    result.nestedArrays.push({
+                        path: path ? `${path}.${key}` : key,
+                        parentPath: path || 'root',
+                        name: key,
+                        depth: depth + 1
+                    });
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+// Build hierarchical data structure with parent and child tables
+function buildHierarchicalData(obj, structure) {
+    const result = {
+        parent: { name: 'parent', data: [], tableName: 'parent' },
+        children: [] // [{name, tableName, data, parentKey}]
+    };
+
+    // Unwrap single-key wrapper objects ONLY if they contain arrays (e.g., {"Profiles": {...}})
+    let unwrappedObj = obj;
+    if (typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
+        const keys = Object.keys(obj);
+        if (keys.length === 1) {
+            const value = obj[keys[0]];
+            // Only unwrap if it contains arrays
+            if (Array.isArray(value) || (typeof value === 'object' && value !== null && containsArrays(value))) {
+                unwrappedObj = value;
+            }
+        }
+    }
+
+    // Find the root array
+    let rootArray = [];
+    let rootKey = '';
+
+    if (Array.isArray(unwrappedObj)) {
+        rootArray = unwrappedObj;
+        rootKey = 'items';
+    } else if (typeof unwrappedObj === 'object' && unwrappedObj !== null) {
+        // Find first array in object
+        for (const [key, value] of Object.entries(unwrappedObj)) {
+            if (Array.isArray(value)) {
+                rootArray = value;
+                rootKey = key;
+                break;
+            } else if (typeof value === 'object' && value !== null) {
+                // Look one level deeper
+                for (const [subKey, subValue] of Object.entries(value)) {
+                    if (Array.isArray(subValue)) {
+                        rootArray = subValue;
+                        rootKey = subKey;
+                        break;
+                    }
+                }
+                if (rootArray.length > 0) break;
+            }
+        }
+    }
+
+    if (rootArray.length === 0) {
+        // Fallback to simple structure
+        result.parent.data = [unwrappedObj];
+        return result;
+    }
+
+    // Process each item in root array
+    rootArray.forEach((item, index) => {
+        if (typeof item !== 'object' || item === null) return;
+
+        const parentRow = { _id: index };
+        const childArrays = {};
+
+        // Separate parent properties from child arrays
+        for (const [key, value] of Object.entries(item)) {
+            if (Array.isArray(value)) {
+                // This is a child array
+                childArrays[key] = value;
+            } else if (typeof value === 'object' && value !== null) {
+                // Check if this object is a single-key wrapper containing an array
+                const subKeys = Object.keys(value);
+                if (subKeys.length === 1 && Array.isArray(value[subKeys[0]])) {
+                    // Unwrap: e.g., Meters: { Meter: [...] } becomes Meter: [...]
+                    childArrays[subKeys[0]] = value[subKeys[0]];
+                } else {
+                    // Check if this object contains arrays (like Meters.Meter)
+                    let hasArrays = false;
+                    for (const [subKey, subValue] of Object.entries(value)) {
+                        if (Array.isArray(subValue)) {
+                            childArrays[subKey] = subValue;
+                            hasArrays = true;
+                        }
+                    }
+
+                    // If no arrays, treat as parent property
+                    if (!hasArrays) {
+                        flattenObjectProperties(value, key, parentRow, '');
+                    }
+                }
+            } else {
+                // Primitive value - add to parent
+                parentRow[key] = value;
+            }
+        }
+
+        result.parent.data.push(parentRow);
+
+        // Process child arrays
+        for (const [arrayName, arrayData] of Object.entries(childArrays)) {
+            // Find or create child table
+            let childTable = result.children.find(c => c.name === arrayName);
+
+            if (!childTable) {
+                childTable = {
+                    name: arrayName,
+                    tableName: toSnakeCase(arrayName),
+                    data: [],
+                    parentKey: '_parent_id'
+                };
+                result.children.push(childTable);
+            }
+
+            // Add rows to child table
+            arrayData.forEach((childItem, childIndex) => {
+                const childRow = {
+                    _id: childTable.data.length,
+                    _parent_id: index
+                };
+
+                if (typeof childItem === 'object' && childItem !== null && !Array.isArray(childItem)) {
+                    // Flatten child object properties
+                    for (const [k, v] of Object.entries(childItem)) {
+                        if (!Array.isArray(v) && (typeof v !== 'object' || v === null)) {
+                            childRow[k] = v;
+                        }
+                    }
+                } else {
+                    childRow.value = childItem;
+                }
+
+                childTable.data.push(childRow);
+            });
+        }
+    });
+
+    // Set table name for parent based on root key
+    result.parent.tableName = toSnakeCase(rootKey) || 'parent';
+
+    return result;
+}
+
+// Convert camelCase or PascalCase to snake_case
+function toSnakeCase(str) {
+    return str
+        .replace(/([A-Z])/g, '_$1')
+        .toLowerCase()
+        .replace(/^_/, '')
+        .replace(/\s+/g, '_');
+}
+
+// Group by deepest array - one row per array element
+function normalizeDataGrouped(obj, parentPath = '', parentContext = {}) {
+    const results = [];
+
+    // Unwrap single-key wrapper objects ONLY if they contain an array (e.g., {"users": [...]})
+    let unwrappedObj = obj;
+    if (typeof obj === 'object' && obj !== null && !Array.isArray(obj) && parentPath === '') {
+        const keys = Object.keys(obj);
+        if (keys.length === 1) {
+            const value = obj[keys[0]];
+            // Only unwrap if it's an array or contains arrays
+            if (Array.isArray(value)) {
+                unwrappedObj = value;
+            } else if (typeof value === 'object' && value !== null) {
+                // Check if this object has any arrays (directly or nested)
+                const hasArrays = containsArrays(value);
+                if (hasArrays) {
+                    unwrappedObj = value;
+                }
+            }
+        }
+    }
+
+    if (Array.isArray(unwrappedObj)) {
+        // Found an array - create rows for each element
+        unwrappedObj.forEach((item, index) => {
+            const indexColumn = `${parentPath}_Index`;
+            const context = { ...parentContext, [indexColumn]: index };
+
+            if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+                // Object in array - flatten its properties
+                const row = { ...context };
+                flattenObjectProperties(item, '', row, parentPath);
+
+                // Check if this object has nested arrays
+                const nestedResults = findAndProcessNestedArrays(item, parentPath, row);
+
+                if (nestedResults.length > 0) {
+                    results.push(...nestedResults);
+                } else {
+                    results.push(row);
+                }
+            } else if (Array.isArray(item)) {
+                // Nested array - recurse
+                const nested = normalizeDataGrouped(item, parentPath, context);
+                results.push(...nested);
+            } else {
+                // Primitive in array
+                context[`${parentPath}_Value`] = item;
+                results.push(context);
+            }
+        });
+    } else if (typeof unwrappedObj === 'object' && unwrappedObj !== null) {
+        // Object at root - look for arrays inside
+        const hasArrays = Object.values(unwrappedObj).some(v => Array.isArray(v) || (typeof v === 'object' && v !== null));
+
+        if (!hasArrays) {
+            // No arrays - just return the object as a single row
+            const row = {};
+            flattenObjectProperties(unwrappedObj, '', row, '');
+            results.push(row);
+        } else {
+            // Has arrays - process them
+            for (const [key, value] of Object.entries(unwrappedObj)) {
+                if (Array.isArray(value)) {
+                    const nested = normalizeDataGrouped(value, key, parentContext);
+                    results.push(...nested);
+                } else if (typeof value === 'object' && value !== null) {
+                    const nested = normalizeDataGrouped(value, key, parentContext);
+                    results.push(...nested);
+                }
+            }
+        }
+    }
+
+    return results.length > 0 ? results : [{ Value: unwrappedObj }];
+}
+
+function flattenObjectProperties(obj, prefix, row, arrayName) {
+    for (const [key, value] of Object.entries(obj)) {
+        const colName = prefix ? `${prefix}.${key}` : (arrayName ? `${removeArraySuffix(arrayName)}.${key}` : key);
+
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            // Nested object - flatten it
+            flattenObjectProperties(value, colName, row, arrayName);
+        } else if (!Array.isArray(value)) {
+            // Primitive value
+            row[colName] = value;
+        }
+    }
+}
+
+function findAndProcessNestedArrays(obj, parentPath, context) {
+    const results = [];
+
+    for (const [key, value] of Object.entries(obj)) {
+        if (Array.isArray(value)) {
+            // Found a nested array
+            const arrayPath = key;
+            const nested = normalizeDataGrouped(value, arrayPath, context);
+            results.push(...nested);
+        } else if (typeof value === 'object' && value !== null) {
+            const nested = findAndProcessNestedArrays(value, parentPath, context);
+            if (nested.length > 0) {
+                results.push(...nested);
+            }
+        }
+    }
+
+    return results;
+}
+
+function removeArraySuffix(str) {
+    // Remove trailing 's' if it looks like a plural (Meters -> Meter)
+    if (str.endsWith('s') && str.length > 2) {
+        return str.slice(0, -1);
+    }
+    return str;
+}
+
+// Helper function to check if an object contains arrays at any level
+function containsArrays(obj) {
+    if (Array.isArray(obj)) return true;
+    if (typeof obj !== 'object' || obj === null) return false;
+
+    for (const value of Object.values(obj)) {
+        if (Array.isArray(value)) return true;
+        if (typeof value === 'object' && value !== null && containsArrays(value)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // Step 1: Flatten JSON to all leaf paths
@@ -441,12 +885,20 @@ function flattenToLeafPaths(obj, parentKey = '') {
 function pathsToCSV(flatPaths) {
     // Each flattened path becomes a row in CSV
     // Path: "Demographic.Age and Gender.All.MA_Payment"
+    // Path with arrays: "Profiles.Profile[0].Meters.Meter[1].Service"
     // Value: 8405.09
     const rows = [];
 
     for (let path in flatPaths) {
         const value = flatPaths[path];
-        const parts = path.split('.');
+
+        // Split path by dots AND array indices
+        // "Profile[0].Meters.Meter[1].ID" becomes ["Profile", "[0]", "Meters", "Meter", "[1]", "ID"]
+        const parts = path.split(/\.|\[/).map(part => {
+            // Remove trailing ] from array indices
+            return part.endsWith(']') ? '[' + part.slice(0, -1) + ']' : part;
+        }).filter(part => part !== '');
+
         const record = {};
 
         // Split path into parts (except last which is the metric name)
@@ -479,6 +931,17 @@ function csvToRows(csvRows) {
         }
     });
 
+    // Detect if we have a simple single-root structure
+    // Check if all rows start with the same path_0 (root key)
+    const rootKeys = new Set();
+    csvRows.forEach(row => {
+        if (row['path_0'] !== undefined) {
+            rootKeys.add(row['path_0']);
+        }
+    });
+
+    const useSingleRootNaming = rootKeys.size === 1;
+
     // Group rows by their path (everything except metric)
     const grouped = {};
 
@@ -499,21 +962,52 @@ function csvToRows(csvRows) {
             });
         }
 
-        // Add metric as column
-        grouped[pathKey][row.metric] = row.value;
+        // Determine column name based on structure
+        let columnName;
+
+        if (useSingleRootNaming) {
+            // Smart naming: Skip root container and array indices
+            // Build hierarchical path from meaningful names
+            const meaningfulPath = [];
+            for (let i = 1; i < maxPathDepth; i++) { // Start from 1 to skip root
+                const pathPart = row[`path_${i}`];
+                if (pathPart !== undefined && !pathPart.match(/^\[\d+\]$/)) {
+                    // Skip array indices like [0], [1], etc.
+                    meaningfulPath.push(pathPart);
+                }
+            }
+
+            // Add the metric name at the end
+            meaningfulPath.push(row.metric);
+
+            // Create the column name: e.g., "Profile.Meters.Meter.Service"
+            columnName = meaningfulPath.join('.');
+        } else {
+            // Multiple roots: use Level-based naming for clarity
+            columnName = row.metric;
+        }
+
+        // Store the value with the chosen column name
+        grouped[pathKey][columnName] = row.value;
     });
 
     // Convert grouped object to array
     const result = Object.values(grouped);
 
-    // Clean up and rename columns
+    // Clean up and rename path columns
     result.forEach(row => {
-        // Rename path_0, path_1 to more meaningful names
-        const pathNames = ['Level1', 'Level2', 'Level3', 'Level4', 'Level5', 'Level6'];
-        for (let i = 0; i < pathNames.length; i++) {
-            if (row[`path_${i}`] !== undefined) {
-                row[pathNames[i]] = row[`path_${i}`];
+        if (useSingleRootNaming) {
+            // For single root, we don't need Key columns, just remove paths
+            for (let i = 0; i < maxPathDepth; i++) {
                 delete row[`path_${i}`];
+            }
+        } else {
+            // For multiple roots, keep Key columns for context (renamed from Level)
+            for (let i = 0; i < maxPathDepth; i++) {
+                if (row[`path_${i}`] !== undefined) {
+                    row[`Key${i + 1}`] = row[`path_${i}`];
+                    delete row[`path_${i}`];
+                }
             }
         }
     });
@@ -536,10 +1030,41 @@ function buildColumns() {
 
     if (parsedData.length === 0) return;
 
-    const sample = parsedData[0];
-    if (typeof sample === 'object') {
-        allColumns = Object.keys(sample).sort();
-    }
+    // Collect all unique column names from ALL rows, not just the first one
+    // This is important for complex nested JSON where different rows may have different properties
+    const columnSet = new Set();
+    parsedData.forEach(row => {
+        if (typeof row === 'object' && row !== null) {
+            Object.keys(row).forEach(key => columnSet.add(key));
+        }
+    });
+
+    allColumns = Array.from(columnSet).sort((a, b) => {
+        // Custom sort: Index and Key columns first, then alphabetically
+        const aIsKey = a.match(/^Key(\d+)$/);
+        const bIsKey = b.match(/^Key(\d+)$/);
+        const aIsIndex = a.endsWith('_Index');
+        const bIsIndex = b.endsWith('_Index');
+
+        // Index columns come first
+        if (aIsIndex && !bIsIndex) return -1;
+        if (!aIsIndex && bIsIndex) return 1;
+
+        // Then Key columns
+        if (aIsKey && bIsKey) {
+            // Both are Key columns, sort by number
+            return parseInt(aIsKey[1]) - parseInt(bIsKey[1]);
+        } else if (aIsKey) {
+            // a is Key, b is not - Key comes first
+            return -1;
+        } else if (bIsKey) {
+            // b is Key, a is not - Key comes first
+            return 1;
+        } else {
+            // Neither are Key columns, sort alphabetically
+            return a.localeCompare(b);
+        }
+    });
 
     selectedColumns = [...allColumns];
 
@@ -671,6 +1196,25 @@ function buildTable() {
         return;
     }
 
+    // Check if we have hierarchical data
+    if (hierarchicalData && hierarchicalData.children.length > 0) {
+        buildHierarchicalTable(filteredData);
+    } else {
+        buildSimpleTable(filteredData);
+    }
+
+    tableContainer.classList.remove('hide');
+    noDataEl.classList.add('hide');
+
+    // Update stats
+    updateStats(filteredData);
+    document.getElementById('statsContainer').style.display = 'grid';
+}
+
+function buildSimpleTable(filteredData) {
+    const tableHead = document.getElementById('tableHead');
+    const tableBody = document.getElementById('tableBody');
+
     // Build header
     tableHead.innerHTML = '';
     selectedColumns.forEach(col => {
@@ -692,13 +1236,146 @@ function buildTable() {
         });
         tableBody.appendChild(tr);
     });
+}
 
-    tableContainer.classList.remove('hide');
-    noDataEl.classList.add('hide');
+function buildHierarchicalTable(filteredData) {
+    const tableHead = document.getElementById('tableHead');
+    const tableBody = document.getElementById('tableBody');
 
-    // Update stats
-    updateStats(filteredData);
-    document.getElementById('statsContainer').style.display = 'grid';
+    // Build header with expand column
+    tableHead.innerHTML = '';
+    const expandTh = document.createElement('th');
+    expandTh.style.width = '40px';
+    expandTh.textContent = '';
+    tableHead.appendChild(expandTh);
+
+    selectedColumns.forEach(col => {
+        const th = document.createElement('th');
+        th.innerHTML = `${escapeHtml(col)} <span class="sort-indicator">${getSortIndicator(col)}</span>`;
+        th.onclick = () => sortTable(col);
+        tableHead.appendChild(th);
+    });
+
+    // Build body with expandable rows
+    tableBody.innerHTML = '';
+    filteredData.forEach((row, rowIndex) => {
+        const tr = document.createElement('tr');
+        tr.dataset.rowId = row._id !== undefined ? row._id : rowIndex;
+
+        // Expand button column
+        const expandTd = document.createElement('td');
+        expandTd.style.textAlign = 'center';
+        expandTd.style.cursor = 'pointer';
+        expandTd.innerHTML = '<span class="expand-icon">▶</span>';
+        expandTd.onclick = () => toggleChildTables(tr, row._id !== undefined ? row._id : rowIndex);
+        tr.appendChild(expandTd);
+
+        // Data columns
+        selectedColumns.forEach(col => {
+            const td = document.createElement('td');
+            const value = row[col];
+            td.textContent = formatCellValue(value);
+            tr.appendChild(td);
+        });
+
+        tableBody.appendChild(tr);
+    });
+}
+
+function toggleChildTables(parentRow, parentId) {
+    const expandIcon = parentRow.querySelector('.expand-icon');
+    const nextRow = parentRow.nextElementSibling;
+
+    // Check if child tables are already shown
+    if (nextRow && nextRow.classList.contains('child-tables-row')) {
+        // Collapse
+        nextRow.remove();
+        expandIcon.textContent = '▶';
+    } else {
+        // Expand
+        expandIcon.textContent = '▼';
+
+        // Create child tables row
+        const childRow = document.createElement('tr');
+        childRow.classList.add('child-tables-row');
+
+        const childTd = document.createElement('td');
+        childTd.colSpan = selectedColumns.length + 1;
+        childTd.style.padding = '0';
+        childTd.style.background = 'var(--bg-secondary)';
+
+        const childContainer = document.createElement('div');
+        childContainer.style.padding = '12px';
+        childContainer.style.display = 'grid';
+        childContainer.style.gap = '16px';
+
+        // Create table for each child array
+        hierarchicalData.children.forEach(childTable => {
+            const childData = childTable.data.filter(row => row._parent_id === parentId);
+
+            if (childData.length === 0) return;
+
+            const tableWrapper = document.createElement('div');
+            tableWrapper.style.border = '1px solid var(--border-color)';
+            tableWrapper.style.borderRadius = '4px';
+            tableWrapper.style.overflow = 'hidden';
+
+            const tableTitle = document.createElement('div');
+            tableTitle.style.padding = '8px 12px';
+            tableTitle.style.background = 'var(--bg-tertiary)';
+            tableTitle.style.fontWeight = '600';
+            tableTitle.style.fontSize = '12px';
+            tableTitle.style.borderBottom = '1px solid var(--border-color)';
+            tableTitle.textContent = `${childTable.name} (${childData.length} rows)`;
+
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.fontSize = '11px';
+
+            // Get columns from first row
+            const childColumns = Object.keys(childData[0]).filter(k => !k.startsWith('_'));
+
+            // Header
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            childColumns.forEach(col => {
+                const th = document.createElement('th');
+                th.textContent = col;
+                th.style.padding = '6px 8px';
+                th.style.background = 'var(--bg-primary)';
+                th.style.borderBottom = '1px solid var(--border-color)';
+                th.style.textAlign = 'left';
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // Body
+            const tbody = document.createElement('tbody');
+            childData.forEach(childRow => {
+                const tr = document.createElement('tr');
+                childColumns.forEach(col => {
+                    const td = document.createElement('td');
+                    td.textContent = formatCellValue(childRow[col]);
+                    td.style.padding = '6px 8px';
+                    td.style.borderBottom = '1px solid var(--border-color)';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+
+            tableWrapper.appendChild(tableTitle);
+            tableWrapper.appendChild(table);
+            childContainer.appendChild(tableWrapper);
+        });
+
+        childTd.appendChild(childContainer);
+        childRow.appendChild(childTd);
+
+        // Insert after parent row
+        parentRow.parentNode.insertBefore(childRow, parentRow.nextSibling);
+    }
 }
 
 function getFilteredData() {
@@ -715,35 +1392,57 @@ function getFilteredData() {
                 const operatorsNeedingValue = ['equals', 'notequals', 'contains', 'starts', 'ends', 'gt', 'lt', 'gte', 'lte'];
                 if (operatorsNeedingValue.includes(filter.operator) && filter.value === '') return true;
 
+                // Check parent row first
                 const value = row[filter.column];
                 const filterVal = filter.value;
 
-                switch (filter.operator) {
-                    case 'equals':
-                        return String(value).toLowerCase() === filterVal.toLowerCase();
-                    case 'notequals':
-                        return String(value).toLowerCase() !== filterVal.toLowerCase();
-                    case 'contains':
-                        return String(value).toLowerCase().includes(filterVal.toLowerCase());
-                    case 'starts':
-                        return String(value).toLowerCase().startsWith(filterVal.toLowerCase());
-                    case 'ends':
-                        return String(value).toLowerCase().endsWith(filterVal.toLowerCase());
-                    case 'isnull':
-                        return value === null || value === undefined || value === '';
-                    case 'isnotnull':
-                        return value !== null && value !== undefined && value !== '';
-                    case 'gt':
-                        return Number(value) > Number(filterVal);
-                    case 'lt':
-                        return Number(value) < Number(filterVal);
-                    case 'gte':
-                        return Number(value) >= Number(filterVal);
-                    case 'lte':
-                        return Number(value) <= Number(filterVal);
-                    default:
-                        return true;
+                const matchesFilter = (val) => {
+                    switch (filter.operator) {
+                        case 'equals':
+                            return String(val).toLowerCase() === filterVal.toLowerCase();
+                        case 'notequals':
+                            return String(val).toLowerCase() !== filterVal.toLowerCase();
+                        case 'contains':
+                            return String(val).toLowerCase().includes(filterVal.toLowerCase());
+                        case 'starts':
+                            return String(val).toLowerCase().startsWith(filterVal.toLowerCase());
+                        case 'ends':
+                            return String(val).toLowerCase().endsWith(filterVal.toLowerCase());
+                        case 'isnull':
+                            return val === null || val === undefined || val === '';
+                        case 'isnotnull':
+                            return val !== null && val !== undefined && val !== '';
+                        case 'gt':
+                            return Number(val) > Number(filterVal);
+                        case 'lt':
+                            return Number(val) < Number(filterVal);
+                        case 'gte':
+                            return Number(val) >= Number(filterVal);
+                        case 'lte':
+                            return Number(val) <= Number(filterVal);
+                        default:
+                            return true;
+                    }
+                };
+
+                // Check parent row
+                if (matchesFilter(value)) return true;
+
+                // For hierarchical data, also check child tables
+                if (hierarchicalData && hierarchicalData.children.length > 0) {
+                    const parentId = row._id !== undefined ? row._id : parsedData.indexOf(row);
+
+                    // Check if any child row matches the filter
+                    return hierarchicalData.children.some(childTable => {
+                        const childRows = childTable.data.filter(childRow => childRow._parent_id === parentId);
+                        return childRows.some(childRow => {
+                            const childValue = childRow[filter.column];
+                            return childValue !== undefined && matchesFilter(childValue);
+                        });
+                    });
                 }
+
+                return false;
             });
         });
     }
@@ -752,9 +1451,30 @@ function getFilteredData() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     if (searchTerm) {
         filtered = filtered.filter(row => {
-            return selectedColumns.some(col => {
+            // Check parent columns
+            const matchesParent = selectedColumns.some(col => {
                 return String(row[col]).toLowerCase().includes(searchTerm);
             });
+
+            if (matchesParent) return true;
+
+            // For hierarchical data, also check child tables
+            if (hierarchicalData && hierarchicalData.children.length > 0) {
+                const parentId = row._id !== undefined ? row._id : parsedData.indexOf(row);
+
+                // Check if any child row matches the search
+                return hierarchicalData.children.some(childTable => {
+                    const childRows = childTable.data.filter(childRow => childRow._parent_id === parentId);
+                    return childRows.some(childRow => {
+                        return Object.keys(childRow).some(key => {
+                            if (key.startsWith('_')) return false;
+                            return String(childRow[key]).toLowerCase().includes(searchTerm);
+                        });
+                    });
+                });
+            }
+
+            return false;
         });
     }
 
@@ -912,69 +1632,239 @@ async function reloadDatabase() {
             return;
         }
 
-        // Get current filtered data
-        const data = getFilteredData();
-        if (data.length === 0) {
-            showStatus('No data to load into database', 'error');
-            return;
+        // Show loading message in the FILTERS pane (persistent until DB is loaded)
+        showStatus('Populating records for DB query...', 'info', true);
+
+        // Clear table metadata
+        tableMetadata = [];
+
+        // Check if we have hierarchical data
+        if (hierarchicalData && hierarchicalData.children.length > 0) {
+            await loadHierarchicalDataIntoPGLite();
+        } else {
+            await loadSimpleDataIntoPGLite();
         }
-
-        // Drop existing table if it exists
-        try {
-            await pgliteDB.query('DROP TABLE IF EXISTS json_data');
-        } catch (e) {
-            // Ignore if table doesn't exist
-        }
-
-        // Create table with proper column types
-        const columns = selectedColumns.map(col => {
-            const sample = data.find(row => row[col] !== null && row[col] !== undefined);
-            const value = sample ? sample[col] : '';
-            let type = 'TEXT';
-
-            if (typeof value === 'number') {
-                type = 'NUMERIC';
-            } else if (typeof value === 'boolean') {
-                type = 'BOOLEAN';
-            }
-
-            return `"${col}" ${type}`;
-        }).join(', ');
-
-        // Create table without auto id - just use the columns from data
-        const createTableSQL = `CREATE TABLE json_data (${columns})`;
-        await pgliteDB.query(createTableSQL);
-
-        // Insert data using parameterized queries
-        const insertCols = selectedColumns.map(col => `"${col}"`).join(', ');
-        const placeholders = selectedColumns.map((_, i) => `$${i + 1}`).join(', ');
-        const insertSQL = `INSERT INTO json_data (${insertCols}) VALUES (${placeholders})`;
-
-        for (const row of data) {
-            const values = selectedColumns.map(col => {
-                const val = row[col];
-                return val === null || val === undefined ? null : val;
-            });
-            try {
-                await pgliteDB.query(insertSQL, values);
-            } catch (e) {
-                console.warn('Row insert error:', e);
-            }
-        }
-
-        // Show query section is ready
-        document.getElementById('querySection').classList.remove('hide');
-        document.getElementById('pgliteNotReady').classList.add('hide');
-
-        // Update query placeholder with table info
-        const queryInput = document.getElementById('sqlQuery');
-        queryInput.placeholder = `SELECT * FROM json_data LIMIT 10;  -- Use table name: json_data (${data.length} rows)`;
-
-        showStatus('Database loaded with ' + data.length + ' rows', 'success');
 
     } catch (error) {
         console.error('Database reload error:', error);
         showStatus('Failed to load data into database: ' + error.message, 'error');
+    }
+}
+
+async function loadSimpleDataIntoPGLite() {
+    // Get current filtered data
+    const data = getFilteredData();
+    if (data.length === 0) {
+        showStatus('No data to load into database', 'error');
+        return;
+    }
+
+    // Drop existing table if it exists
+    try {
+        await pgliteDB.query('DROP TABLE IF EXISTS json_data');
+    } catch (e) {
+        // Ignore if table doesn't exist
+    }
+
+    // Create table with proper column types
+    const columns = selectedColumns.map(col => {
+        const sample = data.find(row => row[col] !== null && row[col] !== undefined);
+        const value = sample ? sample[col] : '';
+        let type = 'TEXT';
+
+        if (typeof value === 'number') {
+            type = 'NUMERIC';
+        } else if (typeof value === 'boolean') {
+            type = 'BOOLEAN';
+        }
+
+        return `"${col}" ${type}`;
+    }).join(', ');
+
+    // Create table without auto id - just use the columns from data
+    const createTableSQL = `CREATE TABLE json_data (${columns})`;
+    await pgliteDB.query(createTableSQL);
+
+    // Insert data using parameterized queries
+    const insertCols = selectedColumns.map(col => `"${col}"`).join(', ');
+    const placeholders = selectedColumns.map((_, i) => `$${i + 1}`).join(', ');
+    const insertSQL = `INSERT INTO json_data (${insertCols}) VALUES (${placeholders})`;
+
+    for (const row of data) {
+        const values = selectedColumns.map(col => {
+            const val = row[col];
+            return val === null || val === undefined ? null : val;
+        });
+        try {
+            await pgliteDB.query(insertSQL, values);
+        } catch (e) {
+            console.warn('Row insert error:', e);
+        }
+    }
+
+    tableMetadata = [{
+        name: 'json_data',
+        rowCount: data.length
+    }];
+
+    // Show query section is ready
+    document.getElementById('querySection').classList.remove('hide');
+    document.getElementById('pgliteNotReady').classList.add('hide');
+
+    // Update query placeholder with table info
+    const queryInput = document.getElementById('sqlQuery');
+    queryInput.placeholder = `SELECT * FROM json_data LIMIT 10;  -- Use table name: json_data (${data.length} rows)`;
+
+    showStatus('Database loaded with ' + data.length + ' rows', 'success');
+}
+
+async function loadHierarchicalDataIntoPGLite() {
+    // Drop existing tables
+    const tablesToDrop = [hierarchicalData.parent.tableName];
+    hierarchicalData.children.forEach(child => tablesToDrop.push(child.tableName));
+
+    for (const tableName of tablesToDrop) {
+        try {
+            await pgliteDB.query(`DROP TABLE IF EXISTS ${tableName}`);
+        } catch (e) {
+            // Ignore
+        }
+    }
+
+    // Create and load parent table
+    await createAndLoadTable(
+        hierarchicalData.parent.tableName,
+        hierarchicalData.parent.data,
+        false // no parent ID
+    );
+
+    tableMetadata.push({
+        name: hierarchicalData.parent.tableName,
+        rowCount: hierarchicalData.parent.data.length,
+        type: 'parent'
+    });
+
+    // Create and load child tables
+    for (const childTable of hierarchicalData.children) {
+        await createAndLoadTable(
+            childTable.tableName,
+            childTable.data,
+            true // has parent ID
+        );
+
+        tableMetadata.push({
+            name: childTable.tableName,
+            rowCount: childTable.data.length,
+            type: 'child',
+            parentTable: hierarchicalData.parent.tableName
+        });
+    }
+
+    // Show query section is ready
+    document.getElementById('querySection').classList.remove('hide');
+    document.getElementById('pgliteNotReady').classList.add('hide');
+
+    // Update query placeholder with all table names
+    const queryInput = document.getElementById('sqlQuery');
+    const tableList = tableMetadata.map(t => `${t.name} (${t.rowCount} rows)`).join(', ');
+    queryInput.placeholder = `SELECT * FROM ${hierarchicalData.parent.tableName} LIMIT 10;\n-- Available tables: ${tableList}`;
+
+    // Update available tables info UI
+    updateAvailableTablesUI();
+
+    const totalRows = tableMetadata.reduce((sum, t) => sum + t.rowCount, 0);
+    showStatus(`Database loaded with ${tableMetadata.length} tables, ${totalRows} total rows`, 'success');
+}
+
+function updateAvailableTablesUI() {
+    const tablesInfo = document.getElementById('availableTablesInfo');
+    const tablesList = document.getElementById('tablesList');
+    const joinExamples = document.getElementById('joinExamples');
+
+    if (tableMetadata.length > 1) {
+        // Show available tables section
+        tablesInfo.style.display = 'block';
+
+        // Build tables list
+        let tablesHTML = '';
+        const parentTable = tableMetadata.find(t => t.type === 'parent');
+        const childTables = tableMetadata.filter(t => t.type === 'child');
+
+        if (parentTable) {
+            tablesHTML += `<div>• <strong>${parentTable.name}</strong> (${parentTable.rowCount} rows) - Parent table</div>`;
+        }
+
+        childTables.forEach(child => {
+            tablesHTML += `<div>• <strong>${child.name}</strong> (${child.rowCount} rows) - Child of ${child.parentTable}</div>`;
+        });
+
+        tablesList.innerHTML = tablesHTML;
+
+        // Show join examples
+        if (parentTable && childTables.length > 0) {
+            joinExamples.style.display = 'block';
+            const firstChild = childTables[0];
+
+            document.getElementById('joinExample1').textContent =
+                `SELECT * FROM ${parentTable.name} p JOIN ${firstChild.name} c ON p._id = c._parent_id`;
+
+            if (childTables.length > 1) {
+                const secondChild = childTables[1];
+                document.getElementById('joinExample2').textContent =
+                    `SELECT p.*, c1.*, c2.* FROM ${parentTable.name} p JOIN ${firstChild.name} c1 ON p._id = c1._parent_id JOIN ${secondChild.name} c2 ON p._id = c2._parent_id`;
+            }
+        }
+    } else {
+        // Hide for simple single table
+        tablesInfo.style.display = 'none';
+        joinExamples.style.display = 'none';
+    }
+}
+
+async function createAndLoadTable(tableName, data, hasParentId) {
+    if (data.length === 0) return;
+
+    // Get all columns from all rows (some rows might have different columns)
+    const allCols = new Set();
+    data.forEach(row => {
+        Object.keys(row).forEach(key => allCols.add(key));
+    });
+
+    const columns = Array.from(allCols).map(col => {
+        // Find a sample value for type detection
+        const sample = data.find(row => row[col] !== null && row[col] !== undefined);
+        const value = sample ? sample[col] : '';
+        let type = 'TEXT';
+
+        if (typeof value === 'number') {
+            type = 'NUMERIC';
+        } else if (typeof value === 'boolean') {
+            type = 'BOOLEAN';
+        }
+
+        return `"${col}" ${type}`;
+    }).join(', ');
+
+    // Create table
+    const createTableSQL = `CREATE TABLE ${tableName} (${columns})`;
+    await pgliteDB.query(createTableSQL);
+
+    // Insert data
+    const colNames = Array.from(allCols);
+    const insertCols = colNames.map(col => `"${col}"`).join(', ');
+    const placeholders = colNames.map((_, i) => `$${i + 1}`).join(', ');
+    const insertSQL = `INSERT INTO ${tableName} (${insertCols}) VALUES (${placeholders})`;
+
+    for (const row of data) {
+        const values = colNames.map(col => {
+            const val = row[col];
+            return val === null || val === undefined ? null : val;
+        });
+        try {
+            await pgliteDB.query(insertSQL, values);
+        } catch (e) {
+            console.warn('Row insert error:', e);
+        }
     }
 }
 
@@ -1254,6 +2144,10 @@ function clearInput() {
     document.getElementById('detailsEmpty').classList.remove('hide');
     document.getElementById('detailsStatusMessage').classList.remove('show');
 
+    // Clear filter UI
+    renderFilters();
+    toggleApplyButton();
+
     // Reset stats
     document.getElementById('statRows').textContent = '0';
     document.getElementById('statColumns').textContent = '0';
@@ -1318,3 +2212,29 @@ document.addEventListener('keydown', function(event) {
         closeFAQModal();
     }
 });
+
+// Display Mode Functions
+function detectComplexStructure(obj, depth = 0, arrayDepth = 0) {
+    // Detect if JSON has complex nested structure (multiple nested arrays)
+    // Use the same logic as analyzeStructure
+    const structure = analyzeStructure(obj);
+    return structure.hasMultipleNestedArrays;
+}
+
+function changeDisplayMode() {
+    const selectedMode = document.querySelector('input[name="displayMode"]:checked').value;
+    displayMode = selectedMode;
+
+    // Re-process the data with new display mode
+    if (jsonData) {
+        normalizeData();
+        detectStructure();
+        buildColumns();
+        buildTable();
+
+        // Update PGLite
+        if (pgliteDB && parsedData.length > 0) {
+            loadDataIntoPGLite();
+        }
+    }
+}

@@ -5,7 +5,14 @@
   "main": "index.html",
   "scripts": {
     "start": "npx http-server -p 8000 -o",
-    "dev": "npx http-server -p 8000 -o -c-1"
+    "dev": "npx http-server -p 8000 -o -c-1",
+    "minify:js": "terser static/js/app.js -o static/js/app.min.js --compress --mangle",
+    "minify:css": "csso static/css/styles.css --output static/css/styles.min.css",
+    "minify": "npm run minify:js && npm run minify:css"
+  },
+  "devDependencies": {
+    "terser": "^5.36.0",
+    "csso-cli": "^4.0.2"
   },
   "repository": {
     "type": "git",

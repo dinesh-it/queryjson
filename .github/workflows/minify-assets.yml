@@ -1,0 +1,51 @@
+name: Minify JavaScript and CSS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'static/js/app.js'
+      - 'static/css/styles.css'
+  workflow_dispatch:
+
+jobs:
+  minify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Minify JavaScript and CSS
+        run: npm run minify
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --exit-code static/js/app.min.js static/css/styles.min.css || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit minified files
+        if: steps.git-check.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add static/js/app.min.js static/css/styles.min.css
+          git commit -m "Auto-minify JavaScript and CSS [skip ci]"
+
+      - name: Push changes
+        if: steps.git-check.outputs.changed == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}

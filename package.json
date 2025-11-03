@@ -10,11 +10,16 @@
     "minify:css": "csso static/css/styles.css --output static/css/styles.min.css",
     "cache-bust": "node scripts/cache-bust.js",
     "minify": "npm run minify:js && npm run minify:css && npm run cache-bust",
-    "build": "npm run minify"
+    "build": "npm run minify",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug"
   },
   "devDependencies": {
     "terser": "^5.36.0",
-    "csso-cli": "^4.0.2"
+    "csso-cli": "^4.0.2",
+    "@playwright/test": "^1.40.0"
   },
   "repository": {
     "type": "git",

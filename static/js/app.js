@@ -1389,7 +1389,7 @@ function getFilteredData() {
                 if (!filter.column || !filter.operator) return true;
 
                 // Skip filter if value is empty AND operator requires a value
-                const operatorsNeedingValue = ['equals', 'notequals', 'contains', 'starts', 'ends', 'gt', 'lt', 'gte', 'lte'];
+                const operatorsNeedingValue = ['equals', 'notequals', 'contains', 'starts', 'ends', 'regex', 'gt', 'lt', 'gte', 'lte'];
                 if (operatorsNeedingValue.includes(filter.operator) && filter.value === '') return true;
 
                 // Check parent row first
@@ -1408,6 +1408,15 @@ function getFilteredData() {
                             return String(val).toLowerCase().startsWith(filterVal.toLowerCase());
                         case 'ends':
                             return String(val).toLowerCase().endsWith(filterVal.toLowerCase());
+                        case 'regex':
+                            try {
+                                const regex = new RegExp(filterVal, 'i');
+                                return regex.test(String(val));
+                            } catch (e) {
+                                // Invalid regex - show error but don't filter
+                                console.warn('Invalid regex pattern:', filterVal, e);
+                                return true;
+                            }
                         case 'isnull':
                             return val === null || val === undefined || val === '';
                         case 'isnotnull':
@@ -1553,6 +1562,7 @@ function renderFilters() {
                 <option value="contains" ${filter.operator === 'contains' ? 'selected' : ''}>Contains</option>
                 <option value="starts" ${filter.operator === 'starts' ? 'selected' : ''}>Starts with</option>
                 <option value="ends" ${filter.operator === 'ends' ? 'selected' : ''}>Ends with</option>
+                <option value="regex" ${filter.operator === 'regex' ? 'selected' : ''}>Regex Match</option>
                 <option value="isnull" ${filter.operator === 'isnull' ? 'selected' : ''}>IS NULL/Empty</option>
                 <option value="isnotnull" ${filter.operator === 'isnotnull' ? 'selected' : ''}>IS NOT NULL/Empty</option>
                 <option value="gt" ${filter.operator === 'gt' ? 'selected' : ''}>Greater than</option>

@@ -1,14 +1,15 @@
-name: Playwright Tests
+name: Build, Test & Deploy
 
 on:
   push:
-    branches: [ main, develop ]
+    branches:
+      - main
   pull_request:
     branches: [ main, develop ]
   workflow_dispatch:
 
 jobs:
-  test:
+  build-test-deploy:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     permissions:
@@ -17,15 +18,20 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'npm'
 
     - name: Install dependencies
       run: npm ci
+
+    - name: Minify JavaScript and CSS with cache busting
+      run: npm run minify
 
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps chromium
@@ -49,8 +55,23 @@ jobs:
         path: test-results/
         retention-days: 7
 
+    - name: Check for minified file changes
+      id: git-check
+      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        git diff --exit-code static/js/app.min.js static/css/styles.min.css index.html || echo "changed=true" >> $GITHUB_OUTPUT
+
+    - name: Commit minified files and cache-busted HTML
+      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.git-check.outputs.changed == 'true'
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add static/js/app.min.js static/css/styles.min.css index.html
+        git commit -m "Auto-minify assets and update cache-busting hashes [skip ci]"
+        git push
+
     - name: Push to live branch
-      if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"

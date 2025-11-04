@@ -24,6 +24,10 @@ dist/
 build/
 .cache/
 
+# Minified files (generated during build)
+*.min.js
+*.min.css
+
 # Environment variables
 .env
 .env.local

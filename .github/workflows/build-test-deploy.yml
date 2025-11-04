@@ -55,25 +55,22 @@ jobs:
         path: test-results/
         retention-days: 7
 
-    - name: Check for minified file changes
-      id: git-check
+    - name: Deploy to live branch
       if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: |
-        git diff --exit-code static/js/app.min.js static/css/styles.min.css index.html || echo "changed=true" >> $GITHUB_OUTPUT
+        # Add minified files (generated during build) to the current commit
+        git add -f static/js/app.min.js static/css/styles.min.css index.html
 
-    - name: Commit minified files and cache-busted HTML
-      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.git-check.outputs.changed == 'true'
-      run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        git add static/js/app.min.js static/css/styles.min.css index.html
-        git commit -m "Auto-minify assets and update cache-busting hashes [skip ci]"
-        git push
+        # Check if there are any changes to commit
+        if git diff --staged --quiet; then
+          echo "No changes to minified files, deploying current commit"
+        else
+          echo "Committing generated build artifacts for deployment"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git commit -m "Add build artifacts for deployment [skip ci]"
+        fi
 
-    - name: Push to live branch
-      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-      run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
+        # Push to live branch
         git fetch origin live:live || git branch live
-        git push origin HEAD:live
+        git push origin HEAD:live --force

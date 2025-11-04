@@ -2051,9 +2051,15 @@ function showQueryError(message) {
     }, 100);
 }
 
+// Store query results globally for export functionality
+let currentQueryResults = null;
+
 function displayQueryResult(result) {
     const resultContent = document.getElementById('resultContent');
     const queryResult = document.getElementById('queryResult');
+
+    // Store results for export functionality
+    currentQueryResults = result;
 
     if (!result || result.length === 0) {
         resultContent.innerHTML = '<div style="color: var(--text-secondary); padding: 12px; text-align: center;">(0 rows)</div>';
@@ -2123,6 +2129,84 @@ function exportToJSON() {
 
     const json = JSON.stringify(data, null, 2);
     downloadFile(json, 'data.json', 'application/json');
+}
+
+function copyAsMarkdown() {
+    const data = getFilteredData();
+    if (data.length === 0) {
+        showStatus('No data to copy', 'error');
+        return;
+    }
+
+    // Generate GitHub Flavored Markdown table
+    let markdown = '';
+
+    // Header row
+    markdown += '| ' + selectedColumns.join(' | ') + ' |\n';
+
+    // Separator row with alignment
+    markdown += '| ' + selectedColumns.map(() => '---').join(' | ') + ' |\n';
+
+    // Data rows
+    data.forEach(row => {
+        const rowValues = selectedColumns.map(col => {
+            const value = row[col];
+            // Escape pipe characters and handle null/undefined
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/\|/g, '\\|').replace(/\n/g, ' ');
+        });
+        markdown += '| ' + rowValues.join(' | ') + ' |\n';
+    });
+
+    copyToClipboard(markdown, 'Markdown table copied to clipboard!');
+}
+
+function copyAsJSON() {
+    const data = getFilteredData();
+    if (data.length === 0) {
+        showStatus('No data to copy', 'error');
+        return;
+    }
+
+    const json = JSON.stringify(data, null, 2);
+    copyToClipboard(json, 'JSON copied to clipboard!');
+}
+
+function copyToClipboard(text, successMessage) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+            .then(() => {
+                showStatus(successMessage, 'success');
+            })
+            .catch(err => {
+                console.error('Failed to copy to clipboard:', err);
+                showStatus('Failed to copy to clipboard', 'error');
+            });
+    } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                showStatus(successMessage, 'success');
+            } else {
+                showStatus('Failed to copy to clipboard', 'error');
+            }
+        } catch (err) {
+            console.error('Failed to copy to clipboard:', err);
+            showStatus('Failed to copy to clipboard', 'error');
+        }
+
+        document.body.removeChild(textArea);
+    }
 }
 
 function downloadFile(content, filename, type) {
@@ -2247,4 +2331,76 @@ function changeDisplayMode() {
             loadDataIntoPGLite();
         }
     }
+}
+
+// Query Result Export Functions
+function exportQueryToCSV() {
+    if (!currentQueryResults || currentQueryResults.length === 0) {
+        showStatus('No query results to export', 'error');
+        return;
+    }
+
+    const keys = Object.keys(currentQueryResults[0]);
+    let csv = keys.map(col => `"${col.replace(/"/g, '""')}"`).join(',') + '\n';
+
+    currentQueryResults.forEach(row => {
+        csv += keys.map(key => {
+            const value = row[key];
+            const escaped = String(value === null || value === undefined ? '' : value).replace(/"/g, '""');
+            return `"${escaped}"`;
+        }).join(',') + '\n';
+    });
+
+    downloadFile(csv, 'query-results.csv', 'text/csv');
+}
+
+function exportQueryToJSON() {
+    if (!currentQueryResults || currentQueryResults.length === 0) {
+        showStatus('No query results to export', 'error');
+        return;
+    }
+
+    const json = JSON.stringify(currentQueryResults, null, 2);
+    downloadFile(json, 'query-results.json', 'application/json');
+}
+
+function copyQueryAsJSON() {
+    if (!currentQueryResults || currentQueryResults.length === 0) {
+        showStatus('No query results to copy', 'error');
+        return;
+    }
+
+    const json = JSON.stringify(currentQueryResults, null, 2);
+    copyToClipboard(json, 'Query results JSON copied to clipboard!');
+}
+
+function copyQueryAsMarkdown() {
+    if (!currentQueryResults || currentQueryResults.length === 0) {
+        showStatus('No query results to copy', 'error');
+        return;
+    }
+
+    const keys = Object.keys(currentQueryResults[0]);
+
+    // Generate GitHub Flavored Markdown table
+    let markdown = '';
+
+    // Header row
+    markdown += '| ' + keys.join(' | ') + ' |\n';
+
+    // Separator row with alignment
+    markdown += '| ' + keys.map(() => '---').join(' | ') + ' |\n';
+
+    // Data rows
+    currentQueryResults.forEach(row => {
+        const rowValues = keys.map(key => {
+            const value = row[key];
+            // Escape pipe characters and handle null/undefined
+            if (value === null || value === undefined) return 'NULL';
+            return String(value).replace(/\|/g, '\\|').replace(/\n/g, ' ');
+        });
+        markdown += '| ' + rowValues.join(' | ') + ' |\n';
+    });
+
+    copyToClipboard(markdown, 'Query results Markdown table copied to clipboard!');
 }

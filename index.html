@@ -100,7 +100,7 @@
             "JSONPath Query Support",
             "Interactive Data Filtering",
             "Column Selection and Reordering",
-            "Data Export (CSV, JSON)",
+            "Data Export (CSV, JSON) and Copy (JSON, Markdown)",
             "100% Client-side Processing",
             "No Server Upload Required"
         ],
@@ -345,8 +345,10 @@
                         <input type="text" id="searchInput" placeholder="Search..." onkeyup="applySearch()">
                     </div>
                     <div class="button-group">
-                        <button class="btn-secondary" onclick="exportToCSV()">CSV</button>
-                        <button class="btn-secondary" onclick="exportToJSON()">JSON</button>
+                        <button class="btn-secondary" onclick="exportToCSV()" title="Download as CSV file">📥 CSV</button>
+                        <button class="btn-secondary" onclick="exportToJSON()" title="Download as JSON file">📥 JSON</button>
+                        <button class="btn-secondary" onclick="copyAsJSON()" title="Copy JSON to clipboard">📋 Copy JSON</button>
+                        <button class="btn-secondary" onclick="copyAsMarkdown()" title="Copy Markdown table to clipboard">📋 Copy Markdown</button>
                     </div>
                 </div>
 
@@ -456,6 +458,12 @@
 
                     <!-- Query Result Display -->
                     <div id="queryResult" class="query-result hide">
+                        <div style="display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 8px; padding: 8px; background: var(--bg-tertiary); border-radius: 4px;">
+                            <button class="btn-secondary" onclick="exportQueryToCSV()" title="Download query results as CSV file">📥 CSV</button>
+                            <button class="btn-secondary" onclick="exportQueryToJSON()" title="Download query results as JSON file">📥 JSON</button>
+                            <button class="btn-secondary" onclick="copyQueryAsJSON()" title="Copy query results JSON to clipboard">📋 Copy JSON</button>
+                            <button class="btn-secondary" onclick="copyQueryAsMarkdown()" title="Copy query results Markdown table to clipboard">📋 Copy Markdown</button>
+                        </div>
                         <div id="resultContent"></div>
                     </div>
                 </div>
@@ -476,7 +484,7 @@
                 <li><strong>JSONPath Query Support:</strong> Query nested JSON structures using JSONPath expressions</li>
                 <li><strong>Data Filtering:</strong> Apply multiple filters with various operators (equals, contains, greater than, etc.)</li>
                 <li><strong>Column Management:</strong> Select, reorder, and customize which columns to display</li>
-                <li><strong>Export Functionality:</strong> Download results as CSV or JSON files</li>
+                <li><strong>Export & Copy:</strong> Download as CSV/JSON or copy as JSON/Markdown to clipboard</li>
                 <li><strong>100% Client-Side:</strong> All processing happens in your browser - no data sent to servers</li>
                 <li><strong>Free and Open Source:</strong> MIT licensed, completely free to use forever</li>
             </ul>
@@ -593,7 +601,7 @@
                     <li><strong>JSONPath Queries:</strong> Query JSON data using JSONPath expressions</li>
                     <li><strong>Column Management:</strong> Select, reorder, and customize which columns to display</li>
                     <li><strong>Advanced Filtering:</strong> Apply multiple filters with various operators</li>
-                    <li><strong>Export Data:</strong> Export filtered results as CSV or JSON</li>
+                    <li><strong>Export & Copy:</strong> Download as CSV/JSON or copy as JSON/Markdown to clipboard</li>
                     <li><strong>Privacy First:</strong> All processing happens in your browser - no data is sent to any server</li>
                 </ul>
 
@@ -692,7 +700,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="static/js/app.min.js?v=430d0b87"></script>
+    <script src="static/js/app.min.js?v=ca4fe410"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

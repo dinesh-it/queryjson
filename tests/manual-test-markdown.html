@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Markdown Export Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .result {
+            background: #f5f5f5;
+            padding: 10px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .pass { color: green; }
+        .fail { color: red; }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Markdown Export Manual Test</h1>
+
+    <div class="test-section">
+        <h2>Test 1: Basic Markdown Export</h2>
+        <button onclick="testBasicExport()">Run Test</button>
+        <div id="test1-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Pipe Character Escaping</h2>
+        <button onclick="testPipeEscaping()">Run Test</button>
+        <div id="test2-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Null/Undefined Handling</h2>
+        <button onclick="testNullHandling()">Run Test</button>
+        <div id="test3-result" class="result"></div>
+    </div>
+
+    <script>
+        // Mock the global variables and functions needed
+        let parsedData = [];
+        let selectedColumns = [];
+
+        function downloadFile(content, filename, type) {
+            // Instead of downloading, display the content
+            return content;
+        }
+
+        function showStatus(message, type) {
+            console.log(`[${type}] ${message}`);
+        }
+
+        function getFilteredData() {
+            return parsedData;
+        }
+
+        // Copy the exportToMarkdown function from app.js
+        function exportToMarkdown() {
+            const data = getFilteredData();
+            if (data.length === 0) {
+                showStatus('No data to export', 'error');
+                return;
+            }
+
+            // Generate GitHub Flavored Markdown table
+            let markdown = '';
+
+            // Header row
+            markdown += '| ' + selectedColumns.join(' | ') + ' |\n';
+
+            // Separator row with alignment
+            markdown += '| ' + selectedColumns.map(() => '---').join(' | ') + ' |\n';
+
+            // Data rows
+            data.forEach(row => {
+                const rowValues = selectedColumns.map(col => {
+                    const value = row[col];
+                    // Escape pipe characters and handle null/undefined
+                    if (value === null || value === undefined) return '';
+                    return String(value).replace(/\|/g, '\\|').replace(/\n/g, ' ');
+                });
+                markdown += '| ' + rowValues.join(' | ') + ' |\n';
+            });
+
+            return downloadFile(markdown, 'data.md', 'text/markdown');
+        }
+
+        // Test 1: Basic Export
+        function testBasicExport() {
+            parsedData = [
+                { name: 'Alice', age: 30, city: 'NYC' },
+                { name: 'Bob', age: 25, city: 'SF' }
+            ];
+            selectedColumns = ['name', 'age', 'city'];
+
+            const result = exportToMarkdown();
+            const resultDiv = document.getElementById('test1-result');
+
+            const expected = '| name | age | city |\n| --- | --- | --- |\n| Alice | 30 | NYC |\n| Bob | 25 | SF |\n';
+
+            if (result === expected) {
+                resultDiv.innerHTML = '<span class="pass">✓ PASS</span>\n\nGenerated Markdown:\n' + result;
+            } else {
+                resultDiv.innerHTML = '<span class="fail">✗ FAIL</span>\n\nExpected:\n' + expected + '\n\nGot:\n' + result;
+            }
+        }
+
+        // Test 2: Pipe Escaping
+        function testPipeEscaping() {
+            parsedData = [
+                { name: 'Test | Name', value: '100' },
+                { name: 'Another', value: '200 | 300' }
+            ];
+            selectedColumns = ['name', 'value'];
+
+            const result = exportToMarkdown();
+            const resultDiv = document.getElementById('test2-result');
+
+            const hasPipeEscape = result.includes('\\|');
+            const hasUnescapedPipe = result.split('\n').some((line, idx) => {
+                // Skip header and separator rows
+                if (idx < 2) return false;
+                // Check if there are unescaped pipes in data (not the table structure pipes)
+                const parts = line.split('|');
+                return parts.some(part => part.includes('|') && !part.includes('\\|'));
+            });
+
+            if (hasPipeEscape && !hasUnescapedPipe) {
+                resultDiv.innerHTML = '<span class="pass">✓ PASS</span>\n\nPipe characters properly escaped:\n' + result;
+            } else {
+                resultDiv.innerHTML = '<span class="fail">✗ FAIL</span>\n\nPipe escaping issue:\n' + result;
+            }
+        }
+
+        // Test 3: Null/Undefined Handling
+        function testNullHandling() {
+            parsedData = [
+                { name: 'Alice', age: null, city: 'NYC' },
+                { name: 'Bob', age: undefined, city: 'SF' }
+            ];
+            selectedColumns = ['name', 'age', 'city'];
+
+            const result = exportToMarkdown();
+            const resultDiv = document.getElementById('test3-result');
+
+            const lines = result.split('\n');
+            const row1 = lines[2]; // First data row
+            const row2 = lines[3]; // Second data row
+
+            // Check that null/undefined are replaced with empty strings
+            const hasEmptyAgeColumn = row1.includes('|  |') && row2.includes('|  |');
+
+            if (hasEmptyAgeColumn) {
+                resultDiv.innerHTML = '<span class="pass">✓ PASS</span>\n\nNull/undefined handled correctly:\n' + result;
+            } else {
+                resultDiv.innerHTML = '<span class="fail">✗ FAIL</span>\n\nNull/undefined handling issue:\n' + result;
+            }
+        }
+    </script>
+</body>
+</html>

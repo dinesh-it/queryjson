@@ -34,9 +34,9 @@ module.exports = defineConfig({
   ],
 
   webServer: {
-    command: 'npx http-server -p 8000',
+    command: 'python3 -m http.server 8000',
     url: 'http://localhost:8000',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 120 * 1000,
   },
 });

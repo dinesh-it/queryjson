@@ -11,6 +11,8 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout code
@@ -46,3 +48,11 @@ jobs:
         name: playwright-videos
         path: test-results/
         retention-days: 7
+
+    - name: Push to live branch
+      if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git fetch origin live:live || git branch live
+        git push origin HEAD:live

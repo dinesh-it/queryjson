@@ -1612,22 +1612,30 @@ function escapeHtml(text) {
 
 async function initializePGLite() {
     try {
-        // Check if PGLite is available
+        console.log('[initializePGLite] Starting initialization...');
+        // Check if PGlite is available
         if (!window.PGlite) {
+            console.log('[initializePGLite] PGlite not loaded yet, retrying in 500ms');
             showStatus('PGLite library loading... Please wait', 'info');
             setTimeout(initializePGLite, 500);
             return;
         }
 
+        console.log('[initializePGLite] PGlite loaded, initializing database...');
         if (!pgliteDB) {
             // Initialize the PGLite database
+            console.log('[initializePGLite] Creating new PGlite instance...');
             pgliteDB = new window.PGlite();
             // Test connection
+            console.log('[initializePGLite] Testing database connection...');
             await pgliteDB.query("SELECT 1");
+            console.log('[initializePGLite] Database connection successful');
         }
 
         // Create and load table
+        console.log('[initializePGLite] Loading data into database...');
         await reloadDatabase();
+        console.log('[initializePGLite] Initialization complete!');
 
     } catch (error) {
         console.error('Database Error:', error);
@@ -1671,9 +1679,10 @@ async function loadSimpleDataIntoPGLite() {
 
     // Drop existing table if it exists
     try {
-        await pgliteDB.query('DROP TABLE IF EXISTS json_data');
+        await pgliteDB.query('DROP TABLE IF EXISTS json_data CASCADE');
     } catch (e) {
-        // Ignore if table doesn't exist
+        console.warn('Error dropping table:', e);
+        // If drop fails, try to continue anyway
     }
 
     // Create table with proper column types
@@ -1692,8 +1701,20 @@ async function loadSimpleDataIntoPGLite() {
     }).join(', ');
 
     // Create table without auto id - just use the columns from data
-    const createTableSQL = `CREATE TABLE json_data (${columns})`;
-    await pgliteDB.query(createTableSQL);
+    // Use CREATE TABLE IF NOT EXISTS to handle cases where drop failed
+    const createTableSQL = `CREATE TABLE IF NOT EXISTS json_data (${columns})`;
+    try {
+        await pgliteDB.query(createTableSQL);
+    } catch (e) {
+        // If table already exists with different schema, drop and recreate
+        console.warn('Error creating table, attempting to drop and recreate:', e);
+        try {
+            await pgliteDB.query('DROP TABLE json_data CASCADE');
+            await pgliteDB.query(`CREATE TABLE json_data (${columns})`);
+        } catch (e2) {
+            throw new Error('Failed to create table: ' + e2.message);
+        }
+    }
 
     // Insert data using parameterized queries
     const insertCols = selectedColumns.map(col => `"${col}"`).join(', ');

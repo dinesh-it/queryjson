@@ -15,22 +15,22 @@ test.describe('Export Functionality', () => {
   });
 
   test('should have CSV download button visible', async ({ page }) => {
-    const csvButton = page.locator('button:has-text("📥 CSV")');
+    const csvButton = page.locator('#outputPanel button:has-text("📥 CSV")');
     await expect(csvButton).toBeVisible();
   });
 
   test('should have JSON download button visible', async ({ page }) => {
-    const jsonButton = page.locator('button:has-text("📥 JSON")');
+    const jsonButton = page.locator('#outputPanel button:has-text("📥 JSON")');
     await expect(jsonButton).toBeVisible();
   });
 
   test('should have Copy JSON button visible', async ({ page }) => {
-    const copyJsonButton = page.locator('button:has-text("📋 Copy JSON")');
+    const copyJsonButton = page.locator('#outputPanel button:has-text("📋 Copy JSON")');
     await expect(copyJsonButton).toBeVisible();
   });
 
   test('should have Copy Markdown button visible', async ({ page }) => {
-    const copyMarkdownButton = page.locator('button:has-text("📋 Copy Markdown")');
+    const copyMarkdownButton = page.locator('#outputPanel button:has-text("📋 Copy Markdown")');
     await expect(copyMarkdownButton).toBeVisible();
   });
 

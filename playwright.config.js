@@ -18,34 +18,47 @@ module.exports = defineConfig({
     screenshot: 'only-on-failure',
   },
 
-  projects: process.env.CI
-    ? [
-        // In CI, only run Chromium to save time
-        {
-          name: 'chromium',
-          use: { ...devices['Desktop Chrome'] },
+  projects: [
+    // Only run Chromium tests for faster builds
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        // Add launch args for CI/headless environments with WASM/SharedArrayBuffer support
+        launchOptions: {
+          args: [
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--enable-features=SharedArrayBuffer',
+            '--disable-features=IsolateOrigins',
+            '--disable-site-isolation-trials',
+            '--disable-web-security',
+            '--js-flags=--experimental-wasm-threads'
+          ]
         },
-      ]
-    : [
-        // Locally, all browsers are available
-        {
-          name: 'chromium',
-          use: { ...devices['Desktop Chrome'] },
-        },
-        {
-          name: 'firefox',
-          use: { ...devices['Desktop Firefox'] },
-        },
-        {
-          name: 'webkit',
-          use: { ...devices['Desktop Safari'] },
-        },
-      ],
+        // Add context options to enable SharedArrayBuffer
+        contextOptions: {
+          ...devices['Desktop Chrome'].contextOptions,
+        }
+      },
+    },
+    // Uncomment to test other browsers (requires `npx playwright install firefox webkit`)
+    // {
+    //   name: 'firefox',
+    //   use: { ...devices['Desktop Firefox'] },
+    // },
+    // {
+    //   name: 'webkit',
+    //   use: { ...devices['Desktop Safari'] },
+    // },
+  ],
 
   webServer: {
-    command: 'npx http-server -p 8000 -c-1',
+    command: 'python3 -m http.server 8000',
     url: 'http://localhost:8000',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 120 * 1000,
   },
 });

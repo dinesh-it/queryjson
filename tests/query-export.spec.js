@@ -14,7 +14,8 @@ test.describe('Query Export Functionality', () => {
     await page.waitForSelector('table', { timeout: 10000 });
 
     // Wait for query section to be visible (database ready)
-    await page.waitForSelector('#querySection:not(.hide)', { timeout: 15000 });
+    // PGLite can take a while to initialize, especially on first load
+    await page.waitForSelector('#querySection:not(.hide)', { timeout: 30000 });
 
     // Execute a simple query
     await page.fill('#sqlQuery', 'SELECT * FROM json_data LIMIT 3');

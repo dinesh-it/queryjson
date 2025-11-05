@@ -1,4 +1,4 @@
-const CACHE_NAME = 'queryjson-cache-v1';
+const CACHE_NAME = 'queryjson-cache-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -40,37 +40,59 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - Network first for HTML, cache first for assets
 self.addEventListener('fetch', event => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Network first strategy for HTML files (always get latest)
+  if (request.mode === 'navigate' || request.destination === 'document' ||
+      url.pathname.endsWith('.html') || url.pathname === '/') {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          // Cache the new version
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(request, responseToCache);
+          });
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache when offline
+          return caches.match(request).then(cachedResponse => {
+            return cachedResponse || caches.match('/index.html');
+          });
+        })
+    );
+    return;
+  }
+
+  // Cache first strategy for static assets (CSS, JS, images)
   event.respondWith(
-    caches.match(event.request)
+    caches.match(request)
       .then(response => {
         if (response) {
           return response;
         }
 
-        return fetch(event.request).then(response => {
+        return fetch(request).then(response => {
           // Don't cache non-successful responses
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
 
-          // Cache CDN resources and API responses
-          if (event.request.url.includes('cdn.jsdelivr.net')) {
+          // Cache CDN resources and static assets
+          if (request.url.includes('cdn.jsdelivr.net') ||
+              request.url.includes('/static/')) {
             const responseToCache = response.clone();
             caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, responseToCache);
+              cache.put(request, responseToCache);
             });
           }
 
           return response;
         });
-      })
-      .catch(() => {
-        // Fallback for offline navigation requests
-        if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
-        }
       })
   );
 });

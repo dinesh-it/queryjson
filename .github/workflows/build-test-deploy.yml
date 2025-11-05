@@ -58,8 +58,8 @@ jobs:
     - name: Deploy to live branch
       if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: |
-        # Add minified files (generated during build) to the current commit
-        git add -f static/js/app.min.js static/css/styles.min.css index.html
+        # Add minified files and cache control headers to the current commit
+        git add -f static/js/app.min.js static/css/styles.min.css index.html _headers
 
         # Check if there are any changes to commit
         if git diff --staged --quiet; then
